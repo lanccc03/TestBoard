@@ -1,0 +1,144 @@
+# TestBoard
+
+公司内网测试结果平台。测试框架执行完成后，将完整测试结果上报到平台；平台负责保存、查询和统计。
+
+当前已完成阶段 0：前后端工程骨架、环境配置、健康检查、基础测试和容器启动配置。
+
+## 环境准备
+
+- Python 3.12
+- 根目录 Python 虚拟环境：`.venv`
+- uv
+- Node.js
+- pnpm 10.34.1
+- 本机 PostgreSQL
+- Docker（可选，用于 Compose 启动）
+
+复制环境变量示例：
+
+```bash
+cp .env.example .env
+```
+
+本地开发默认数据库连接串：
+
+```bash
+DATABASE_URL=postgresql+psycopg://testboard:testboard@localhost:5432/testboard
+```
+
+如果后端运行在 Docker 容器中，并连接宿主机 PostgreSQL，macOS/Windows 通常使用：
+
+```bash
+DATABASE_URL=postgresql+psycopg://testboard:testboard@host.docker.internal:5432/testboard
+```
+
+## 后端
+
+安装依赖到根目录 `.venv`：
+
+```bash
+source .venv/bin/activate
+uv sync --active --project backend
+```
+
+启动 FastAPI：
+
+```bash
+cd backend
+uvicorn app.main:app --reload
+```
+
+健康检查：
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+期望响应：
+
+```json
+{"status":"ok","service":"testboard-backend"}
+```
+
+后端检查：
+
+```bash
+cd backend
+ruff check .
+ruff format --check .
+mypy app tests
+pytest
+```
+
+PostgreSQL 连通性 smoke check：
+
+```bash
+cd backend
+DATABASE_URL=postgresql+psycopg://testboard:testboard@localhost:5432/testboard python -m app.db.check
+```
+
+## 前端
+
+安装依赖：
+
+```bash
+cd frontend
+pnpm install
+```
+
+启动 Vite：
+
+```bash
+cd frontend
+pnpm dev
+```
+
+前端检查：
+
+```bash
+cd frontend
+pnpm lint
+pnpm format:check
+pnpm test
+pnpm build
+```
+
+前端 API 地址通过 `VITE_API_BASE_URL` 配置，默认是：
+
+```bash
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+## Docker Compose
+
+Compose 只启动应用服务，不包含 PostgreSQL 服务。启动前请先在宿主机准备 PostgreSQL，并配置 `DATABASE_URL`。
+
+```bash
+docker compose up --build
+```
+
+默认端口：
+
+- 后端：`http://localhost:8000`
+- 前端：`http://localhost:8080`
+
+## 目录结构
+
+```text
+TestBoard/
+  backend/
+    app/
+    alembic/
+    tests/
+    pyproject.toml
+    uv.lock
+  frontend/
+    src/
+    components.json
+    package.json
+    pnpm-lock.yaml
+  docs/
+  docker-compose.yml
+  prd.md
+  tech-stack.md
+```
