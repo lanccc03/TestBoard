@@ -24,7 +24,7 @@ TestBoard 是公司内网测试结果平台。后端使用 FastAPI、Pydantic v2
 - 安装依赖：`pnpm install`。
 - 本地启动：`pnpm dev`。
 - 前端变更验证：`pnpm lint`、`pnpm format:check`、`pnpm test`、`pnpm build`。
-- 优先使用现有 shadcn/ui 组件和 `lucide-react` 图标，再考虑新增 UI 模式。
+- 基础 UI 控件优先复用或通过 shadcn/ui 引入，不要手写；图标优先使用 `lucide-react`。
 
 ## 通用规则
 
