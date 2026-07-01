@@ -70,11 +70,33 @@ mypy app tests
 pytest
 ```
 
+数据库迁移：
+
+```bash
+cd backend
+alembic upgrade head
+```
+
+回滚全部迁移：
+
+```bash
+cd backend
+alembic downgrade base
+```
+
 PostgreSQL 连通性 smoke check：
 
 ```bash
 cd backend
 DATABASE_URL=postgresql+psycopg://testboard:testboard@localhost:5432/testboard python -m app.db.check
+```
+
+可选迁移 smoke test 会在 `TEST_DATABASE_URL` 指向名称包含 `test` 的一次性 PostgreSQL
+数据库时执行；未设置时自动跳过：
+
+```bash
+cd backend
+TEST_DATABASE_URL=postgresql+psycopg://testboard:testboard@localhost:5432/testboard_test pytest tests/db/test_migrations.py
 ```
 
 ## 前端
