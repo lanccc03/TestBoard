@@ -1,8 +1,27 @@
-from sqlalchemy import select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.models.test_run import TestRun
+from app.schemas.run import RunListQuery
 from app.schemas.test_report import TestReportRequest
+
+
+def _apply_run_list_filters(
+    statement: Select[tuple[TestRun]],
+    query: RunListQuery,
+) -> Select[tuple[TestRun]]:
+    if query.started_at_from is not None:
+        statement = statement.where(TestRun.started_at >= query.started_at_from)
+    if query.started_at_to is not None:
+        statement = statement.where(TestRun.started_at <= query.started_at_to)
+    if query.runner_owner is not None:
+        statement = statement.where(TestRun.runner_owner == query.runner_owner)
+    if query.runner_id is not None:
+        statement = statement.where(TestRun.runner_id == query.runner_id)
+    if query.status is not None:
+        statement = statement.where(TestRun.status == query.status)
+
+    return statement
 
 
 class TestRunRepository:
@@ -34,3 +53,16 @@ class TestRunRepository:
         self._session.add(test_run)
         self._session.flush()
         return test_run
+
+    def count_runs(self, query: RunListQuery) -> int:
+        statement = select(TestRun)
+        statement = _apply_run_list_filters(statement, query)
+        count_statement = select(func.count()).select_from(statement.subquery())
+        return self._session.scalar(count_statement) or 0
+
+    def list_runs(self, query: RunListQuery) -> list[TestRun]:
+        statement = select(TestRun)
+        statement = _apply_run_list_filters(statement, query)
+        statement = statement.order_by(TestRun.started_at.desc(), TestRun.run_id.desc())
+        statement = statement.offset(query.offset).limit(query.page_size)
+        return list(self._session.scalars(statement).all())

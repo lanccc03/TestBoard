@@ -2,13 +2,16 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
+import { AppProviders } from './providers/AppProviders'
 import App from './App'
 
 function renderAppAt(path: string) {
   render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>,
+    <AppProviders>
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>
+    </AppProviders>,
   )
 }
 
@@ -42,13 +45,16 @@ describe('App', () => {
     expect(screen.getByText('http://localhost:8000')).toBeInTheDocument()
   })
 
-  it('renders the runs placeholder at /runs', () => {
+  it('renders the runs page at /runs', () => {
     renderAppAt('/runs')
 
     expect(
       screen.getByRole('heading', { name: '任务列表' }),
     ).toBeInTheDocument()
-    expect(screen.getByText(/任务列表查询切片会在这里接入/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/按时间、owner、执行机和状态筛选/),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '筛选' })).toBeInTheDocument()
   })
 
   it('renders the run detail placeholder with route params', () => {

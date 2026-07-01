@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.runs import router as runs_router
 from app.api.v1.test_reports import router as test_reports_router
 from app.core.config import get_settings
 
@@ -14,6 +15,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(runs_router)
 app.include_router(test_reports_router)
 
 

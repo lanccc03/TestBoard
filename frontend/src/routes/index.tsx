@@ -4,7 +4,7 @@ import { AppLayout } from '@/layouts/AppLayout'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { FailuresPage } from '@/pages/FailuresPage'
 import { RunDetailPage } from '@/pages/RunDetailPage'
-import { RunsPage } from '@/pages/RunsPage'
+import { RunsPage } from '@/pages/runs/RunsPage'
 
 export function AppRoutes() {
   return (
