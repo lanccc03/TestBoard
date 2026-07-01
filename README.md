@@ -77,6 +77,13 @@ cd backend
 alembic upgrade head
 ```
 
+生成开发用例数据：
+
+```bash
+cd backend
+python -m app.dev.seed_data
+```
+
 回滚全部迁移：
 
 ```bash
