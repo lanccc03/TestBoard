@@ -131,6 +131,45 @@ pnpm build
 VITE_API_BASE_URL=http://localhost:8000
 ```
 
+## 局域网开发启动
+
+如果需要让局域网内其他 PC 访问当前开发机上的前后端服务，需要让服务监听所有网卡，并把前端 API 地址和后端 CORS 源配置为开发机的真实局域网 IP。
+
+先确认开发机局域网 IP，例如：
+
+```bash
+ipconfig getifaddr en0
+```
+
+以下示例假设开发机局域网 IP 是 `192.168.1.23`，实际使用时请替换为本机 IP。
+
+启动后端：
+
+```bash
+cd backend
+BACKEND_CORS_ORIGINS=http://192.168.1.23:5173 \
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+启动前端：
+
+```bash
+cd frontend
+VITE_API_BASE_URL=http://192.168.1.23:8000 \
+pnpm dev -- --host 0.0.0.0 --port 5173
+```
+
+局域网内其他 PC 访问：
+
+- 前端：`http://192.168.1.23:5173`
+- 后端健康检查：`http://192.168.1.23:8000/health`
+
+注意事项：
+
+- `0.0.0.0` 只用于服务监听所有网卡，浏览器访问地址和 `VITE_API_BASE_URL` 必须使用开发机真实局域网 IP。
+- 不要在局域网 PC 上使用 `localhost` 访问开发机服务；`localhost` 指向访问者自己的机器。
+- 如果无法访问，检查开发机防火墙是否放行 `5173` 和 `8000` 端口。
+
 ## Docker Compose
 
 Compose 只启动应用服务，不包含 PostgreSQL 服务。启动前请先在宿主机准备 PostgreSQL，并配置 `DATABASE_URL`。
