@@ -28,8 +28,8 @@
 1. 阶段 0：项目定型与骨架初始化。
 2. 阶段 1：数据库模型与迁移。
 3. 阶段 2：上报链路 MVP。
-4. 阶段 3：后端查询与统计 API。
-5. 阶段 4：前端基础能力与页面。
+4. 阶段 3：核心查询功能切片并行交付。
+5. 阶段 4：看板统计功能切片并行交付。
 6. 阶段 5：联调、测试与部署。
 7. 阶段 6：首版后增强。
 
@@ -232,169 +232,174 @@
 - 非法 payload 返回明确错误。
 - 未授权请求无法上报。
 
-## 7. 阶段 3：后端查询与统计 API
+## 7. 阶段 3：核心查询功能切片并行交付
 
 ### 阶段目标
 
-提供前端页面所需的全部查询接口，包括首页看板、任务列表、任务详情、失败用例和统计查询。
+在上报链路 MVP 稳定后，不再按“后端 API 全部完成后再做前端页面”的串行方式推进，而是按用户可独立验收的功能切片并行交付。每个切片同时包含后端接口、OpenAPI 契约、前端页面、数据请求 hooks、测试和联调验收。
+
+本阶段优先交付测试排查的核心闭环：
+
+- 查看任务列表。
+- 进入任务详情。
+- 定位失败用例。
+- 打开报告、日志、截图链接。
+
+### 并行交付规则
+
+1. 每个功能切片先约定 API 契约。
+   - 请求路径
+   - 查询参数
+   - 响应 schema
+   - 分页格式
+   - 错误响应格式
+2. 后端和前端基于同一契约并行开发。
+   - 后端实现真实接口、服务、仓储和测试。
+   - 前端先基于 OpenAPI 类型和 mock 数据开发页面状态，再切换到真实接口。
+3. 每个切片独立验收。
+   - 有后端 API 测试。
+   - 有前端页面或 hook 测试。
+   - 有真实联调数据验证。
+   - 页面具备 loading、empty、error 状态。
+4. 切片之间只通过稳定接口和共享类型协作。
+   - 不要求等待全部查询 API 完成。
+   - 不要求等待全部页面完成。
+   - 不把统计页面作为任务列表或详情页的前置条件。
 
 ### 开发任务
 
-1. 实现任务列表接口：
-   - `GET /api/v1/runs`
-   - 支持时间范围筛选
-   - 支持 owner 筛选
-   - 支持执行机筛选
-   - 支持任务状态筛选
-   - 支持分页
-2. 实现任务详情接口：
-   - `GET /api/v1/runs/{run_id}`
-   - 返回任务基础信息
-   - 返回汇总结果
-   - 返回用例结果列表
-3. 实现任务详情用例筛选：
-   - 按结果筛选
-   - 按模块筛选
-   - 按 case ID 搜索
-   - 按用例名称搜索
-4. 实现首页看板接口：
-   - `GET /api/v1/dashboard/summary`
-   - 今日任务总数
-   - 今日任务通过率
-   - 今日用例总数
-   - 今日用例通过率
-   - 今日失败用例数
-   - 按 owner 聚合
-   - 按执行机展示最近执行结果和最近上报时间
-   - 最近失败任务
-   - 最近失败用例
-5. 实现失败用例接口：
-   - `GET /api/v1/cases/failures`
-   - 支持时间范围、owner、runner、module、case ID 搜索
-6. 实现统计接口：
-   - `GET /api/v1/stats/by-date`
-   - `GET /api/v1/stats/by-owner`
-   - `GET /api/v1/stats/by-runner`
-   - `GET /api/v1/stats/by-case`
-7. 固化统计口径。
-   - 用例通过率 = 通过用例数 / 已执行用例数
-   - 任务通过率 = 通过任务数 / 已结束任务数
-   - 跳过用例不计入失败，但需要单独展示
-8. 编写查询和统计测试。
+1. 功能切片 A：任务列表查询。
+   - 后端：实现 `GET /api/v1/runs`。
+   - 后端：支持时间范围、owner、执行机、任务状态筛选。
+   - 后端：支持分页和稳定排序。
+   - 后端：返回任务状态、用例总数、失败数、通过率、报告链接。
+   - 前端：接入 OpenAPI 类型生成。
+   - 前端：封装 API client、runs API 模块和 `useRuns` hook。
+   - 前端：实现 `/runs` 页面、筛选表单、状态展示和分页。
+   - 测试：覆盖后端筛选、分页、排序和前端筛选交互。
+   - 验收：用户可以按常用条件筛选任务，并从列表进入任务详情。
+2. 功能切片 B：任务详情与用例明细。
+   - 后端：实现 `GET /api/v1/runs/{run_id}`。
+   - 后端：返回任务基础信息、汇总结果和用例结果列表。
+   - 后端：支持用例结果、模块、case ID、用例名称筛选。
+   - 前端：封装 run detail API 模块和 `useRunDetail` hook。
+   - 前端：实现 `/runs/:runId` 页面。
+   - 前端：展示任务基础信息、汇总结果、用例列表、错误信息、报告链接、日志链接、截图链接。
+   - 测试：覆盖详情查询、用例筛选和链接展示。
+   - 验收：用户可以从任务详情快速定位失败用例并打开外部链接。
+3. 功能切片 C：失败用例排查。
+   - 后端：实现 `GET /api/v1/cases/failures`。
+   - 后端：支持时间范围、owner、runner、module、case ID 搜索。
+   - 后端：返回失败用例、所属任务、错误类型、错误信息、日志链接、截图链接。
+   - 前端：封装 failure cases API 模块和 `useFailureCases` hook。
+   - 前端：实现 `/failures` 页面。
+   - 前端：支持筛选、分页、跳转任务详情。
+   - 测试：覆盖失败用例筛选、分页和跳转。
+   - 验收：用户可以从失败用例页直接找到关联任务和排查入口。
+4. 功能切片 D：基础应用框架。
+   - 前端：接入 TanStack Query。
+   - 前端：实现主布局、导航、页面容器。
+   - 前端：实现 `/`、`/runs`、`/runs/:runId`、`/failures` 路由。
+   - 前端：统一 loading、empty、error 状态。
+   - 前后端：统一错误响应展示策略。
+   - 测试：覆盖路由渲染、错误态和空状态。
+   - 验收：阶段 3 的三个业务页面可以在同一应用框架下稳定访问。
 
 ### 建议产物
 
 - `backend/app/api/v1/runs.py`
-- `backend/app/api/v1/dashboard.py`
 - `backend/app/api/v1/cases.py`
+- `backend/app/services/run_query_service.py`
+- `backend/app/services/failure_case_service.py`
+- `backend/tests/api/test_runs.py`
+- `backend/tests/api/test_failure_cases.py`
+- `frontend/src/api/client.ts`
+- `frontend/src/api/runs.ts`
+- `frontend/src/api/cases.ts`
+- `frontend/src/api/schema.d.ts`
+- `frontend/src/hooks/useRuns.ts`
+- `frontend/src/hooks/useRunDetail.ts`
+- `frontend/src/hooks/useFailureCases.ts`
+- `frontend/src/pages/RunsPage.tsx`
+- `frontend/src/pages/RunDetailPage.tsx`
+- `frontend/src/pages/FailuresPage.tsx`
+- `frontend/src/routes/index.tsx`
+
+### 验收标准
+
+- 任务列表、任务详情、失败用例三个核心切片均可独立联调和验收。
+- 所有列表接口支持分页、筛选和稳定排序。
+- 前端页面使用真实接口展示数据，不依赖硬编码 mock 数据。
+- 用户可以从任务列表进入详情，也可以从失败用例进入关联任务。
+- 日志、截图、报告链接可以点击打开。
+- loading、empty、error 状态在核心页面中可见且一致。
+
+## 8. 阶段 4：看板统计功能切片并行交付
+
+### 阶段目标
+
+在阶段 3 的核心排查闭环基础上，继续按功能切片并行交付首页看板、统计趋势和跨页面体验完善。阶段 4 不再是单纯的前端页面阶段，而是将统计口径、聚合 API、页面展示和测试作为同一个交付单元处理。
+
+### 开发任务
+
+1. 功能切片 E：首页看板。
+   - 后端：实现 `GET /api/v1/dashboard/summary`。
+   - 后端：返回今日任务总数、今日任务通过率、今日用例总数、今日用例通过率、今日失败用例数。
+   - 后端：返回 owner 聚合、执行机最近执行结果、执行机最近上报时间、最近失败任务、最近失败用例。
+   - 前端：封装 dashboard API 模块和 `useDashboard` hook。
+   - 前端：实现 `/` 首页看板。
+   - 前端：支持从最近失败任务、最近失败用例跳转到详情或失败用例页。
+   - 测试：覆盖聚合计算、空数据状态和跳转。
+   - 验收：用户打开首页即可判断当天整体质量和主要失败入口。
+2. 功能切片 F：统计趋势与对比。
+   - 后端：实现 `GET /api/v1/stats/by-date`。
+   - 后端：实现 `GET /api/v1/stats/by-owner`。
+   - 后端：实现 `GET /api/v1/stats/by-runner`。
+   - 后端：实现 `GET /api/v1/stats/by-case`。
+   - 后端：支持时间范围筛选。
+   - 前端：封装 stats API 模块和 `useStats` hook。
+   - 前端：实现 `/stats` 页面。
+   - 前端：展示按日期趋势、按 owner 对比、按执行机统计、按用例失败次数统计。
+   - 测试：覆盖多 owner、多 runner、多日期、多 case 数据下的统计结果和页面渲染。
+   - 验收：用户可以查看趋势、对比环境质量，并识别高频失败用例。
+3. 功能切片 G：统计口径与展示一致性。
+   - 后端：固化用例通过率、任务通过率、跳过用例、失败用例的计算口径。
+   - 后端：为 dashboard 和 stats 复用同一套统计服务或聚合函数。
+   - 前端：统一通过率、数量、状态、时间范围的展示格式。
+   - 前端：统一 dashboard、runs、failures、stats 的筛选字段命名。
+   - 测试：同一组 seed 数据在 dashboard、stats、列表页面中得到一致数字。
+   - 验收：后端 API、前端展示和文档说明中的统计口径一致。
+4. 功能切片 H：跨页面体验完善。
+   - 前端：补齐 dashboard、runs、run detail、failures、stats 的导航关系。
+   - 前端：补齐所有页面的 loading、empty、error 状态。
+   - 前端：保证常见桌面分辨率下布局稳定。
+   - 前端：统一 API 错误提示、重试入口和空状态文案。
+   - 前后端：补齐 OpenAPI schema 生成和契约更新流程。
+   - 测试：覆盖页面基础渲染、筛选交互、错误态和空状态。
+   - 验收：用户可以从首页、任务列表、失败用例、统计页之间顺畅跳转并完成排查。
+
+### 建议产物
+
+- `frontend/src/api/dashboard.ts`
+- `frontend/src/api/stats.ts`
+- `frontend/src/hooks/useDashboard.ts`
+- `frontend/src/hooks/useStats.ts`
+- `frontend/src/pages/DashboardPage.tsx`
+- `frontend/src/pages/StatsPage.tsx`
+- `backend/app/api/v1/dashboard.py`
 - `backend/app/api/v1/stats.py`
 - `backend/app/services/dashboard_service.py`
 - `backend/app/services/stats_service.py`
-- `backend/tests/api/test_runs.py`
 - `backend/tests/api/test_dashboard.py`
 - `backend/tests/api/test_stats.py`
 
 ### 验收标准
 
-- API 能覆盖首页、任务列表、任务详情、失败用例、统计查询的数据需求。
-- 所有列表接口支持分页。
-- 常用筛选条件可用。
+- 首页看板、统计趋势和核心排查页面使用一致统计口径。
+- 用户可以从首页进入失败任务、失败用例和任务详情。
+- 统计页可以展示日期、owner、执行机、用例维度的聚合结果。
 - 通过率、失败数、跳过数计算一致。
 - 统计接口在有多 owner、多 runner、多日期数据时结果正确。
-
-## 8. 阶段 4：前端基础能力与页面
-
-### 阶段目标
-
-交付一个可用的内网测试平台后台页面，让用户可以查看测试任务、定位失败用例、进入详情、查看统计趋势。
-
-### 开发任务
-
-1. 接入 OpenAPI 类型生成。
-   - 使用 `openapi-typescript`
-   - 生成 `frontend/src/api/schema.d.ts`
-2. 封装 API client。
-   - 使用 `openapi-fetch`
-   - 统一 base URL
-   - 统一错误处理
-3. 封装业务 API 模块。
-   - `dashboard.ts`
-   - `runs.ts`
-   - `cases.ts`
-   - `stats.ts`
-4. 接入 TanStack Query。
-   - dashboard hooks
-   - runs hooks
-   - run detail hooks
-   - failure cases hooks
-   - stats hooks
-5. 搭建前端主布局。
-   - 顶部导航或侧边导航
-   - 页面容器
-   - loading 状态
-   - empty 状态
-   - error 状态
-6. 实现路由。
-   - `/`
-   - `/runs`
-   - `/runs/:runId`
-   - `/failures`
-   - `/stats`
-7. 实现首页看板。
-   - 今日核心指标
-   - owner 维度统计
-   - 执行机最近状态
-   - 最近失败任务
-   - 最近失败用例
-8. 实现任务列表页。
-   - 筛选表单
-   - 任务状态展示
-   - 用例总数
-   - 失败数
-   - 通过率
-   - 分页
-9. 实现任务详情页。
-   - 任务基础信息
-   - 汇总结果
-   - 用例列表
-   - 失败错误信息
-   - 日志链接
-   - 截图链接
-   - 报告链接
-10. 实现失败用例页。
-    - 失败用例列表
-    - owner、runner、module、case ID 筛选
-    - 跳转任务详情
-11. 实现统计页。
-    - 按日期趋势
-    - 按 owner 对比
-    - 按执行机统计
-    - 按用例失败次数统计
-12. 编写前端基础测试。
-
-### 建议产物
-
-- `frontend/src/api/client.ts`
-- `frontend/src/api/dashboard.ts`
-- `frontend/src/api/runs.ts`
-- `frontend/src/api/cases.ts`
-- `frontend/src/api/stats.ts`
-- `frontend/src/hooks/useDashboard.ts`
-- `frontend/src/hooks/useRuns.ts`
-- `frontend/src/hooks/useRunDetail.ts`
-- `frontend/src/pages/DashboardPage.tsx`
-- `frontend/src/pages/RunsPage.tsx`
-- `frontend/src/pages/RunDetailPage.tsx`
-- `frontend/src/pages/FailuresPage.tsx`
-- `frontend/src/pages/StatsPage.tsx`
-- `frontend/src/routes/index.tsx`
-
-### 验收标准
-
-- 用户可以从首页进入失败任务和任务详情。
-- 任务列表筛选可用。
-- 任务详情能快速定位失败用例。
-- 日志、截图、报告链接可以点击打开。
 - 所有页面有 loading、empty、error 状态。
 - 页面在常见桌面分辨率下布局稳定。
 
@@ -529,7 +534,7 @@
 - 数据可入库。
 - 幂等逻辑可用。
 
-### 里程碑 3：查询可用
+### 里程碑 3：核心排查切片可用
 
 覆盖阶段：
 
@@ -537,10 +542,11 @@
 
 交付结果：
 
-- 后端查询和统计 API 完成。
-- 可以通过 API 查看任务、详情、失败用例和统计数据。
+- 任务列表、任务详情、失败用例三个切片完成前后端联调。
+- 用户可以通过页面查看任务、进入详情并定位失败用例。
+- 核心查询接口、页面状态和基础测试同步完成。
 
-### 里程碑 4：页面可用
+### 里程碑 4：看板统计切片可用
 
 覆盖阶段：
 
@@ -548,8 +554,9 @@
 
 交付结果：
 
-- 首页看板、任务列表、任务详情、失败用例、统计页面完成。
-- 用户可以通过页面完成核心查看和排查流程。
+- 首页看板和统计趋势切片完成前后端联调。
+- 统计口径在 dashboard、stats、列表页面中保持一致。
+- 用户可以通过首页、任务列表、任务详情、失败用例和统计页面完成核心查看和排查流程。
 
 ### 里程碑 5：首版交付
 
