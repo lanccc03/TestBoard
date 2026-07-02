@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Iterator
-from copy import deepcopy
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -9,11 +9,11 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import app.models as _models  # noqa: F401
+from app.core.config import get_settings
 from app.db.session import Base, get_db
 from app.main import app as fastapi_app
 from app.models.runner import Runner
-from app.models.test_case_result import TestCaseResult as CaseResultModel
-from app.models.test_run import TestRun as RunModel
+from app.models.test_case_report import TestCaseReport as CaseReportModel
 
 AUTH_HEADER = {"Authorization": "Bearer change-me"}
 
@@ -24,7 +24,22 @@ def anyio_backend() -> str:
 
 
 @pytest.fixture
-def db_session() -> Iterator[Session]:
+def report_storage_dir(tmp_path: Path) -> Iterator[Path]:
+    storage_dir = tmp_path / "reports"
+    settings = get_settings()
+    original_dir = settings.report_storage_dir
+    original_limit = settings.report_max_upload_bytes
+    settings.report_storage_dir = storage_dir
+    settings.report_max_upload_bytes = 32
+    try:
+        yield storage_dir
+    finally:
+        settings.report_storage_dir = original_dir
+        settings.report_max_upload_bytes = original_limit
+
+
+@pytest.fixture
+def db_session(report_storage_dir: Path) -> Iterator[Session]:
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -64,84 +79,60 @@ def _payload(idempotency_key: str = "idem-1") -> dict[str, Any]:
             "runner_owner": "alice",
             "ip": "127.0.0.1",
         },
-        "run": {
+        "case": {
+            "case_id": "case-1",
+            "case_name": "Case 1",
+            "module": "login",
             "started_at": "2026-06-30T10:00:00+08:00",
-            "ended_at": "2026-06-30T10:30:00+08:00",
-            "duration_ms": 1800000,
-            "status": "failed",
-            "report_url": "https://example.com/report",
+            "ended_at": "2026-06-30T10:00:01+08:00",
+            "duration_ms": 1000,
+            "result": "failed",
+            "error_type": "AssertionError",
+            "error_message": "expected true",
         },
-        "summary": {
-            "total_count": 5,
-            "passed_count": 1,
-            "failed_count": 1,
-            "skipped_count": 1,
-            "blocked_count": 1,
-            "error_count": 1,
-        },
-        "cases": [
-            {
-                "case_id": "case-1",
-                "case_name": "Case 1",
-                "module": "login",
-                "result": "passed",
-                "duration_ms": 100,
-                "log_url": "https://example.com/log-1",
-            },
-            {
-                "case_id": "case-2",
-                "case_name": "Case 2",
-                "module": "login",
-                "result": "failed",
-                "duration_ms": 200,
-                "error_type": "AssertionError",
-                "error_message": "expected true",
-                "log_url": "https://example.com/log-2",
-                "screenshot_url": "https://example.com/screenshot-2",
-            },
-            {
-                "case_id": "case-3",
-                "case_name": "Case 3",
-                "module": "payment",
-                "result": "skipped",
-            },
-            {
-                "case_id": "case-4",
-                "case_name": "Case 4",
-                "module": "payment",
-                "result": "blocked",
-            },
-            {
-                "case_id": "case-5",
-                "case_name": "Case 5",
-                "module": "search",
-                "result": "error",
-                "error_type": "RuntimeError",
-                "error_message": "framework crashed",
-            },
-        ],
     }
 
 
-def _count(
-    session: Session,
-    model: type[Runner] | type[RunModel] | type[CaseResultModel],
-) -> int:
+def _files(
+    payload: dict[str, Any] | str,
+    *,
+    filename: str = "report.html",
+    content: bytes = b"<html>case report</html>",
+    content_type: str = "text/html",
+) -> dict[str, Any]:
+    import json
+
+    payload_value = payload if isinstance(payload, str) else json.dumps(payload)
+    return {
+        "payload": (None, payload_value, "application/json"),
+        "report_file": (filename, content, content_type),
+    }
+
+
+def _count(session: Session, model: type[Runner] | type[CaseReportModel]) -> int:
     return session.scalar(select(func.count()).select_from(model)) or 0
 
 
 @pytest.mark.anyio
-async def test_imports_complete_report_and_persists_runner_run_and_cases(
+async def test_imports_case_report_and_saves_report_file(
     client: httpx.AsyncClient,
     db_session: Session,
+    report_storage_dir: Path,
 ) -> None:
-    response = await client.post("/api/v1/test-reports", json=_payload(), headers=AUTH_HEADER)
+    response = await client.post(
+        "/api/v1/test-reports",
+        files=_files(_payload()),
+        headers=AUTH_HEADER,
+    )
 
     assert response.status_code == 200
     response_json = response.json()
     assert response_json["status"] == "imported"
     assert response_json["message"] == "test report imported"
-    assert response_json["run_id"]
+    assert response_json["case_report_id"]
+    assert response_json["report_url"].endswith(
+        f"/api/v1/case-reports/{response_json['case_report_id']}/report"
+    )
 
     runner = db_session.get(Runner, "runner-1")
     assert runner is not None
@@ -149,59 +140,99 @@ async def test_imports_complete_report_and_persists_runner_run_and_cases(
     assert runner.runner_owner == "alice"
     assert runner.ip == "127.0.0.1"
 
-    test_run = db_session.scalar(select(RunModel).where(RunModel.idempotency_key == "idem-1"))
-    assert test_run is not None
-    assert str(test_run.run_id) == response_json["run_id"]
-    assert test_run.runner_id == "runner-1"
-    assert test_run.runner_owner == "alice"
-    assert test_run.status == "failed"
-    assert test_run.total == 5
-    assert test_run.passed == 1
-    assert test_run.failed == 1
-    assert test_run.skipped == 1
-    assert test_run.blocked == 1
-    assert test_run.error == 1
-
-    case_results = db_session.scalars(
-        select(CaseResultModel).where(CaseResultModel.run_id == test_run.run_id)
-    ).all()
-    assert len(case_results) == 5
+    case_report = db_session.scalar(
+        select(CaseReportModel).where(CaseReportModel.idempotency_key == "idem-1")
+    )
+    assert case_report is not None
+    assert str(case_report.case_report_id) == response_json["case_report_id"]
+    assert case_report.runner_id == "runner-1"
+    assert case_report.runner_owner == "alice"
+    assert case_report.case_id == "case-1"
+    assert case_report.case_name == "Case 1"
+    assert case_report.module == "login"
+    assert case_report.result == "failed"
+    assert case_report.report_filename == "report.html"
+    assert case_report.report_content_type == "text/html"
+    assert case_report.report_size_bytes == len(b"<html>case report</html>")
+    assert case_report.error_type == "AssertionError"
+    assert case_report.error_message == "expected true"
+    assert (report_storage_dir / case_report.report_file_path).read_bytes() == (
+        b"<html>case report</html>"
+    )
 
 
 @pytest.mark.anyio
-async def test_duplicate_idempotency_key_returns_existing_run_without_extra_rows(
+async def test_report_file_endpoint_returns_platform_saved_file(
+    client: httpx.AsyncClient,
+) -> None:
+    create_response = await client.post(
+        "/api/v1/test-reports",
+        files=_files(
+            _payload(),
+            filename="result.txt",
+            content=b"saved report",
+            content_type="text/plain",
+        ),
+        headers=AUTH_HEADER,
+    )
+
+    response = await client.get(create_response.json()["report_url"])
+
+    assert response.status_code == 200
+    assert response.content == b"saved report"
+    assert response.headers["content-type"].startswith("text/plain")
+    assert "result.txt" in response.headers["content-disposition"]
+
+
+@pytest.mark.anyio
+async def test_duplicate_idempotency_key_returns_existing_case_report_without_overwrite(
     client: httpx.AsyncClient,
     db_session: Session,
+    report_storage_dir: Path,
 ) -> None:
-    first_response = await client.post("/api/v1/test-reports", json=_payload(), headers=AUTH_HEADER)
+    first_response = await client.post(
+        "/api/v1/test-reports",
+        files=_files(_payload(), content=b"first file"),
+        headers=AUTH_HEADER,
+    )
     duplicate_payload = _payload()
     duplicate_payload["runner"]["runner_owner"] = "bob"
-    duplicate_payload["cases"][0]["case_name"] = "Changed name"
+    duplicate_payload["case"]["case_name"] = "Changed name"
 
     duplicate_response = await client.post(
         "/api/v1/test-reports",
-        json=duplicate_payload,
+        files=_files(duplicate_payload, content=b"second file"),
         headers=AUTH_HEADER,
     )
 
     assert first_response.status_code == 200
     assert duplicate_response.status_code == 200
     assert duplicate_response.json() == {
-        "run_id": first_response.json()["run_id"],
+        "case_report_id": first_response.json()["case_report_id"],
+        "report_url": first_response.json()["report_url"],
         "status": "duplicate",
         "message": "test report already imported",
     }
     assert _count(db_session, Runner) == 1
-    assert _count(db_session, RunModel) == 1
-    assert _count(db_session, CaseResultModel) == 5
+    assert _count(db_session, CaseReportModel) == 1
+
+    case_report = db_session.scalar(select(CaseReportModel))
+    assert case_report is not None
+    assert case_report.runner_owner == "alice"
+    assert case_report.case_name == "Case 1"
+    assert (report_storage_dir / case_report.report_file_path).read_bytes() == b"first file"
 
 
 @pytest.mark.anyio
-async def test_existing_runner_is_updated_but_run_owner_is_snapshot(
+async def test_existing_runner_is_updated_but_report_owner_is_snapshot(
     client: httpx.AsyncClient,
     db_session: Session,
 ) -> None:
-    first_response = await client.post("/api/v1/test-reports", json=_payload(), headers=AUTH_HEADER)
+    first_response = await client.post(
+        "/api/v1/test-reports",
+        files=_files(_payload()),
+        headers=AUTH_HEADER,
+    )
     second_payload = _payload(idempotency_key="idem-2")
     second_payload["runner"] = {
         "runner_id": "runner-1",
@@ -212,7 +243,7 @@ async def test_existing_runner_is_updated_but_run_owner_is_snapshot(
 
     second_response = await client.post(
         "/api/v1/test-reports",
-        json=second_payload,
+        files=_files(second_payload, filename="second.html", content=b"second"),
         headers=AUTH_HEADER,
     )
 
@@ -225,16 +256,22 @@ async def test_existing_runner_is_updated_but_run_owner_is_snapshot(
     assert runner.runner_owner == "bob"
     assert runner.ip == "127.0.0.2"
 
-    runs = db_session.scalars(select(RunModel).order_by(RunModel.idempotency_key)).all()
-    assert [run.runner_owner for run in runs] == ["alice", "bob"]
+    reports = db_session.scalars(
+        select(CaseReportModel).order_by(CaseReportModel.idempotency_key)
+    ).all()
+    assert [report.runner_owner for report in reports] == ["alice", "bob"]
 
 
 @pytest.mark.anyio
-async def test_missing_required_field_returns_422(client: httpx.AsyncClient) -> None:
+async def test_missing_required_payload_field_returns_422(client: httpx.AsyncClient) -> None:
     payload = _payload()
     del payload["runner"]["runner_id"]
 
-    response = await client.post("/api/v1/test-reports", json=payload, headers=AUTH_HEADER)
+    response = await client.post(
+        "/api/v1/test-reports",
+        files=_files(payload),
+        headers=AUTH_HEADER,
+    )
 
     assert response.status_code == 422
 
@@ -243,13 +280,12 @@ async def test_missing_required_field_returns_422(client: httpx.AsyncClient) -> 
 @pytest.mark.parametrize(
     ("mutator", "expected_fragment"),
     [
-        (lambda payload: payload["run"].update({"status": "skipped"}), "status"),
-        (lambda payload: payload["cases"][0].update({"result": "unknown"}), "result"),
+        (lambda payload: payload["case"].update({"result": "unknown"}), "result"),
         (
-            lambda payload: payload["run"].update({"ended_at": "2026-06-30T09:59:59+08:00"}),
+            lambda payload: payload["case"].update({"ended_at": "2026-06-30T09:59:59+08:00"}),
             "ended_at",
         ),
-        (lambda payload: payload["summary"].update({"failed_count": 2}), "summary"),
+        (lambda payload: payload["case"].update({"duration_ms": -1}), "duration_ms"),
     ],
 )
 async def test_invalid_payload_returns_422(
@@ -260,10 +296,55 @@ async def test_invalid_payload_returns_422(
     payload = _payload()
     mutator(payload)
 
-    response = await client.post("/api/v1/test-reports", json=payload, headers=AUTH_HEADER)
+    response = await client.post(
+        "/api/v1/test-reports",
+        files=_files(payload),
+        headers=AUTH_HEADER,
+    )
 
     assert response.status_code == 422
     assert expected_fragment in response.text
+
+
+@pytest.mark.anyio
+async def test_invalid_payload_json_returns_422(client: httpx.AsyncClient) -> None:
+    response = await client.post(
+        "/api/v1/test-reports",
+        files=_files("{invalid-json"),
+        headers=AUTH_HEADER,
+    )
+
+    assert response.status_code == 422
+    assert "payload" in response.text
+
+
+@pytest.mark.anyio
+async def test_missing_report_file_returns_422(client: httpx.AsyncClient) -> None:
+    import json
+
+    response = await client.post(
+        "/api/v1/test-reports",
+        data={"payload": json.dumps(_payload())},
+        headers=AUTH_HEADER,
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_oversized_report_file_returns_413_and_does_not_persist_rows(
+    client: httpx.AsyncClient,
+    db_session: Session,
+) -> None:
+    response = await client.post(
+        "/api/v1/test-reports",
+        files=_files(_payload(), content=b"x" * 33),
+        headers=AUTH_HEADER,
+    )
+
+    assert response.status_code == 413
+    assert _count(db_session, Runner) == 0
+    assert _count(db_session, CaseReportModel) == 0
 
 
 @pytest.mark.anyio
@@ -279,7 +360,7 @@ async def test_token_errors_return_401(
     client: httpx.AsyncClient,
     headers: dict[str, str],
 ) -> None:
-    response = await client.post("/api/v1/test-reports", json=_payload(), headers=headers)
+    response = await client.post("/api/v1/test-reports", files=_files(_payload()), headers=headers)
 
     assert response.status_code == 401
 
@@ -289,12 +370,15 @@ async def test_validation_failure_does_not_persist_partial_rows(
     client: httpx.AsyncClient,
     db_session: Session,
 ) -> None:
-    payload = deepcopy(_payload())
-    payload["summary"]["total_count"] = 6
+    payload = _payload()
+    payload["case"]["result"] = "unknown"
 
-    response = await client.post("/api/v1/test-reports", json=payload, headers=AUTH_HEADER)
+    response = await client.post(
+        "/api/v1/test-reports",
+        files=_files(payload),
+        headers=AUTH_HEADER,
+    )
 
     assert response.status_code == 422
     assert _count(db_session, Runner) == 0
-    assert _count(db_session, RunModel) == 0
-    assert _count(db_session, CaseResultModel) == 0
+    assert _count(db_session, CaseReportModel) == 0

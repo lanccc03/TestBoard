@@ -26,9 +26,9 @@ describe('App', () => {
       'href',
       '/',
     )
-    expect(screen.getByRole('link', { name: '任务列表' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '用例报告' })).toHaveAttribute(
       'href',
-      '/runs',
+      '/case-reports',
     )
     expect(screen.getByRole('link', { name: '失败用例' })).toHaveAttribute(
       'href',
@@ -45,25 +45,25 @@ describe('App', () => {
     expect(screen.getByText('http://localhost:8000')).toBeInTheDocument()
   })
 
-  it('renders the runs page at /runs', () => {
-    renderAppAt('/runs')
+  it('renders the case reports page at /case-reports', () => {
+    renderAppAt('/case-reports')
 
     expect(
-      screen.getByRole('heading', { name: '任务列表' }),
+      screen.getByRole('heading', { name: '用例报告' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/按时间、owner、执行机和状态筛选/),
+      screen.getByText(/按时间、owner、执行机、结果、模块和用例筛选/),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '筛选' })).toBeInTheDocument()
   })
 
-  it('renders the run detail placeholder with route params', () => {
-    renderAppAt('/runs/test-run-1')
+  it('renders the case report detail placeholder with route params', () => {
+    renderAppAt('/case-reports/test-report-1')
 
     expect(
-      screen.getByRole('heading', { name: '任务详情' }),
+      screen.getByRole('heading', { name: '用例报告详情' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('test-run-1')).toBeInTheDocument()
+    expect(screen.getByText('test-report-1')).toBeInTheDocument()
   })
 
   it('renders the failures placeholder at /failures', () => {
@@ -72,6 +72,6 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: '失败用例' }),
     ).toBeInTheDocument()
-    expect(screen.getByText(/失败用例排查切片会在这里接入/)).toBeInTheDocument()
+    expect(screen.getByText(/关联用例报告跳转/)).toBeInTheDocument()
   })
 })

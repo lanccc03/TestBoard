@@ -30,7 +30,7 @@ def _make_test_engine() -> Engine:
     return create_engine(database_url, pool_pre_ping=True)
 
 
-def test_migration_creates_core_schema_and_enforces_idempotency_key() -> None:
+def test_migration_creates_case_report_schema_and_enforces_idempotency_key() -> None:
     engine = _make_test_engine()
     config = _make_alembic_config(str(engine.url))
 
@@ -39,26 +39,29 @@ def test_migration_creates_core_schema_and_enforces_idempotency_key() -> None:
         command.upgrade(config, "head")
 
         inspector = inspect(engine)
-        assert {"runners", "test_runs", "test_case_results"} <= set(inspector.get_table_names())
+        assert {"runners", "test_case_reports"} <= set(inspector.get_table_names())
+        assert "test_runs" not in inspector.get_table_names()
+        assert "test_case_results" not in inspector.get_table_names()
 
-        test_run_indexes = {index["name"] for index in inspector.get_indexes("test_runs")}
-        test_run_unique_constraints = {
-            constraint["name"] for constraint in inspector.get_unique_constraints("test_runs")
+        case_report_indexes = {
+            index["name"] for index in inspector.get_indexes("test_case_reports")
         }
-        case_result_indexes = {
-            index["name"] for index in inspector.get_indexes("test_case_results")
+        case_report_unique_constraints = {
+            constraint["name"]
+            for constraint in inspector.get_unique_constraints("test_case_reports")
         }
 
-        assert "ix_test_runs_idempotency_key" in test_run_indexes
-        assert "uq_test_runs_idempotency_key" in test_run_unique_constraints
+        assert "ix_test_case_reports_idempotency_key" in case_report_indexes
+        assert "uq_test_case_reports_idempotency_key" in case_report_unique_constraints
         assert {
-            "ix_test_case_results_run_id",
-            "ix_test_case_results_case_id",
-            "ix_test_case_results_result",
-            "ix_test_case_results_module",
-        } <= case_result_indexes
+            "ix_test_case_reports_started_at",
+            "ix_test_case_reports_runner_owner",
+            "ix_test_case_reports_runner_id",
+            "ix_test_case_reports_result",
+            "ix_test_case_reports_case_id",
+            "ix_test_case_reports_module",
+        } <= case_report_indexes
 
-        run_id = uuid.uuid4()
         with engine.begin() as connection:
             connection.execute(
                 text(
@@ -75,34 +78,21 @@ def test_migration_creates_core_schema_and_enforces_idempotency_key() -> None:
             connection.execute(
                 text(
                     """
-                    INSERT INTO test_runs (
-                        run_id, idempotency_key, runner_id, runner_owner, started_at,
-                        ended_at, duration_ms, status, report_url, total, passed,
-                        failed, skipped, blocked, error, created_at
+                    INSERT INTO test_case_reports (
+                        case_report_id, idempotency_key, runner_id, runner_owner,
+                        case_id, case_name, module, started_at, ended_at, duration_ms,
+                        result, report_file_path, report_filename, report_content_type,
+                        report_size_bytes, error_type, error_message, created_at
                     )
                     VALUES (
-                        :run_id, 'idem-1', 'runner-1', 'owner-1', now(), now(),
-                        1000, 'passed', 'https://example.com/report', 1, 1, 0, 0, 0, 0, now()
+                        :case_report_id, 'idem-1', 'runner-1', 'owner-1',
+                        'case-1', 'Case 1', 'module-1', now(), now(), 1000,
+                        'passed', '2026/07/report.html', 'report.html', 'text/html',
+                        100, NULL, NULL, now()
                     )
                     """
                 ),
-                {"run_id": run_id},
-            )
-            connection.execute(
-                text(
-                    """
-                    INSERT INTO test_case_results (
-                        run_id, case_id, case_name, module, result, duration_ms,
-                        error_type, error_message, log_url, screenshot_url, created_at
-                    )
-                    VALUES (
-                        :run_id, 'case-1', 'Case 1', 'module-1', 'passed', 1000,
-                        NULL, NULL, 'https://example.com/log',
-                        'https://example.com/screenshot', now()
-                    )
-                    """
-                ),
-                {"run_id": run_id},
+                {"case_report_id": uuid.uuid4()},
             )
 
         with pytest.raises(IntegrityError):
@@ -110,18 +100,21 @@ def test_migration_creates_core_schema_and_enforces_idempotency_key() -> None:
                 connection.execute(
                     text(
                         """
-                        INSERT INTO test_runs (
-                            run_id, idempotency_key, runner_id, runner_owner, started_at,
-                            ended_at, duration_ms, status, report_url, total, passed,
-                            failed, skipped, blocked, error, created_at
+                        INSERT INTO test_case_reports (
+                            case_report_id, idempotency_key, runner_id, runner_owner,
+                            case_id, case_name, module, started_at, ended_at, duration_ms,
+                            result, report_file_path, report_filename, report_content_type,
+                            report_size_bytes, error_type, error_message, created_at
                         )
                         VALUES (
-                            :run_id, 'idem-1', 'runner-1', 'owner-1', now(), now(),
-                            1000, 'passed', NULL, 1, 1, 0, 0, 0, 0, now()
+                            :case_report_id, 'idem-1', 'runner-1', 'owner-1',
+                            'case-2', 'Case 2', 'module-1', now(), now(), 1000,
+                            'passed', '2026/07/report-2.html', 'report-2.html', 'text/html',
+                            100, NULL, NULL, now()
                         )
                         """
                     ),
-                    {"run_id": uuid.uuid4()},
+                    {"case_report_id": uuid.uuid4()},
                 )
     finally:
         command.downgrade(config, "base")

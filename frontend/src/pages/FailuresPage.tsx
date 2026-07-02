@@ -9,16 +9,16 @@ export function FailuresPage() {
       <div className="flex flex-col gap-2">
         <h2 className="text-2xl font-semibold tracking-normal">失败用例</h2>
         <p className="text-muted-foreground text-sm">
-          失败用例排查切片会在这里接入失败用例筛选、分页和关联任务跳转。
+          失败用例排查切片会在这里接入失败用例筛选、分页和关联用例报告跳转。
         </p>
       </div>
 
       <EmptyState
         title="暂无失败用例"
-        description="失败用例查询接口完成后，这里会展示错误类型、错误信息、日志和截图入口。"
+        description="失败用例查询接口完成后，这里会展示错误类型、错误信息和报告入口。"
         action={
           <Button asChild variant="outline">
-            <Link to="/runs">查看任务列表</Link>
+            <Link to="/case-reports">查看用例报告</Link>
           </Button>
         }
       />

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.session import Base
 
 if TYPE_CHECKING:
-    from app.models.test_run import TestRun
+    from app.models.test_case_report import TestCaseReport
 
 
 class Runner(Base):
@@ -31,4 +31,7 @@ class Runner(Base):
         onupdate=func.now(),
     )
 
-    test_runs: Mapped[list[TestRun]] = relationship("TestRun", back_populates="runner")
+    case_reports: Mapped[list[TestCaseReport]] = relationship(
+        "TestCaseReport",
+        back_populates="runner",
+    )

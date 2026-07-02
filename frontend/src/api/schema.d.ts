@@ -4,15 +4,32 @@
  */
 
 export interface paths {
-  '/api/v1/runs': {
+  '/api/v1/case-reports': {
     parameters: {
       query?: never
       header?: never
       path?: never
       cookie?: never
     }
-    /** List Runs */
-    get: operations['list_runs_api_v1_runs_get']
+    /** List Case Reports */
+    get: operations['list_case_reports_api_v1_case_reports_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/case-reports/{case_report_id}/report': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Case Report File */
+    get: operations['get_case_report_file_api_v1_case_reports__case_report_id__report_get']
     put?: never
     post?: never
     delete?: never
@@ -59,22 +76,30 @@ export interface paths {
 export type webhooks = Record<string, never>
 export interface components {
   schemas: {
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components['schemas']['ValidationError'][]
+    /** Body_create_test_report_api_v1_test_reports_post */
+    Body_create_test_report_api_v1_test_reports_post: {
+      /** Payload */
+      payload: string
+      /** Report File */
+      report_file: string
     }
-    /** RunListItem */
-    RunListItem: {
+    /** CaseReportListItem */
+    CaseReportListItem: {
       /**
-       * Run Id
+       * Case Report Id
        * Format: uuid
        */
-      run_id: string
+      case_report_id: string
       /** Runner Id */
       runner_id: string
       /** Runner Owner */
       runner_owner: string
+      /** Case Id */
+      case_id: string
+      /** Case Name */
+      case_name: string
+      /** Module */
+      module: string | null
       /**
        * Started At
        * Format: date-time
@@ -88,23 +113,21 @@ export interface components {
       /** Duration Ms */
       duration_ms: number | null
       /**
-       * Status
+       * Result
        * @enum {string}
        */
-      status: 'passed' | 'failed' | 'error'
-      /** Total Count */
-      total_count: number
-      /** Failed Count */
-      failed_count: number
-      /** Pass Rate */
-      pass_rate: number | null
+      result: 'passed' | 'failed' | 'skipped' | 'blocked' | 'error'
       /** Report Url */
-      report_url: string | null
+      report_url: string
+      /** Error Type */
+      error_type: string | null
+      /** Error Message */
+      error_message: string | null
     }
-    /** RunListResponse */
-    RunListResponse: {
+    /** CaseReportListResponse */
+    CaseReportListResponse: {
       /** Items */
-      items: components['schemas']['RunListItem'][]
+      items: components['schemas']['CaseReportListItem'][]
       /** Page */
       page: number
       /** Page Size */
@@ -114,47 +137,20 @@ export interface components {
       /** Total Pages */
       total_pages: number
     }
-    /** TestReportCase */
-    TestReportCase: {
-      /** Case Id */
-      case_id: string
-      /** Case Name */
-      case_name: string
-      /** Module */
-      module?: string | null
-      /**
-       * Result
-       * @enum {string}
-       */
-      result: 'passed' | 'failed' | 'skipped' | 'blocked' | 'error'
-      /** Duration Ms */
-      duration_ms?: number | null
-      /** Error Type */
-      error_type?: string | null
-      /** Error Message */
-      error_message?: string | null
-      /** Log Url */
-      log_url?: string | null
-      /** Screenshot Url */
-      screenshot_url?: string | null
-    }
-    /** TestReportRequest */
-    TestReportRequest: {
-      /** Idempotency Key */
-      idempotency_key: string
-      runner: components['schemas']['TestReportRunner']
-      run: components['schemas']['TestReportRun']
-      summary: components['schemas']['TestReportSummary']
-      /** Cases */
-      cases: components['schemas']['TestReportCase'][]
+    /** HTTPValidationError */
+    HTTPValidationError: {
+      /** Detail */
+      detail?: components['schemas']['ValidationError'][]
     }
     /** TestReportResponse */
     TestReportResponse: {
       /**
-       * Run Id
+       * Case Report Id
        * Format: uuid
        */
-      run_id: string
+      case_report_id: string
+      /** Report Url */
+      report_url: string
       /**
        * Status
        * @enum {string}
@@ -162,54 +158,6 @@ export interface components {
       status: 'imported' | 'duplicate'
       /** Message */
       message: string
-    }
-    /** TestReportRun */
-    TestReportRun: {
-      /**
-       * Started At
-       * Format: date-time
-       */
-      started_at: string
-      /**
-       * Ended At
-       * Format: date-time
-       */
-      ended_at: string
-      /** Duration Ms */
-      duration_ms?: number | null
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: 'passed' | 'failed' | 'error'
-      /** Report Url */
-      report_url?: string | null
-    }
-    /** TestReportRunner */
-    TestReportRunner: {
-      /** Runner Id */
-      runner_id: string
-      /** Runner Name */
-      runner_name?: string | null
-      /** Runner Owner */
-      runner_owner: string
-      /** Ip */
-      ip?: string | null
-    }
-    /** TestReportSummary */
-    TestReportSummary: {
-      /** Total Count */
-      total_count: number
-      /** Passed Count */
-      passed_count: number
-      /** Failed Count */
-      failed_count: number
-      /** Skipped Count */
-      skipped_count: number
-      /** Blocked Count */
-      blocked_count: number
-      /** Error Count */
-      error_count: number
     }
     /** ValidationError */
     ValidationError: {
@@ -233,14 +181,16 @@ export interface components {
 }
 export type $defs = Record<string, never>
 export interface operations {
-  list_runs_api_v1_runs_get: {
+  list_case_reports_api_v1_case_reports_get: {
     parameters: {
       query?: {
         started_at_from?: string | null
         started_at_to?: string | null
         runner_owner?: string | null
         runner_id?: string | null
-        status?: ('passed' | 'failed' | 'error') | null
+        result?: ('passed' | 'failed' | 'skipped' | 'blocked' | 'error') | null
+        module?: string | null
+        query?: string | null
         page?: number
         page_size?: number
       }
@@ -256,7 +206,38 @@ export interface operations {
           [name: string]: unknown
         }
         content: {
-          'application/json': components['schemas']['RunListResponse']
+          'application/json': components['schemas']['CaseReportListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_case_report_file_api_v1_case_reports__case_report_id__report_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        case_report_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': unknown
         }
       }
       /** @description Validation Error */
@@ -281,7 +262,7 @@ export interface operations {
     }
     requestBody: {
       content: {
-        'application/json': components['schemas']['TestReportRequest']
+        'multipart/form-data': components['schemas']['Body_create_test_report_api_v1_test_reports_post']
       }
     }
     responses: {

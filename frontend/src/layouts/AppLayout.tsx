@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 
 const navigationItems = [
   { label: '首页', to: '/', end: true },
-  { label: '任务列表', to: '/runs', end: false },
+  { label: '用例报告', to: '/case-reports', end: false },
   { label: '失败用例', to: '/failures', end: false },
 ]
 

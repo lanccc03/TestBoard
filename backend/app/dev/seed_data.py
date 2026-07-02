@@ -2,19 +2,20 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from pathlib import Path
+from uuid import uuid4
 
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.db.session import SessionLocal
 from app.schemas.test_report import (
     CaseResult,
-    RunStatus,
     TestReportCase,
     TestReportRequest,
-    TestReportRun,
     TestReportRunner,
-    TestReportSummary,
 )
+from app.services.report_file_storage import ReportFileStorage, StoredReportFile
 from app.services.test_report_importer import TestReportImporter
 
 
@@ -34,7 +35,8 @@ def _case(
     module: str,
     result: CaseResult,
     *,
-    duration_ms: int | None = 1000,
+    started_at: datetime,
+    duration_ms: int = 1000,
     error_type: str | None = None,
     error_message: str | None = None,
 ) -> TestReportCase:
@@ -42,25 +44,12 @@ def _case(
         case_id=case_id,
         case_name=case_name,
         module=module,
-        result=result,
+        started_at=started_at,
+        ended_at=started_at + timedelta(milliseconds=duration_ms),
         duration_ms=duration_ms,
+        result=result,
         error_type=error_type,
         error_message=error_message,
-        log_url=f"https://logs.example.test/{case_id}",
-        screenshot_url=f"https://screenshots.example.test/{case_id}"
-        if result in {"failed", "error"}
-        else None,
-    )
-
-
-def _summary(cases: list[TestReportCase]) -> TestReportSummary:
-    return TestReportSummary(
-        total_count=len(cases),
-        passed_count=sum(test_case.result == "passed" for test_case in cases),
-        failed_count=sum(test_case.result == "failed" for test_case in cases),
-        skipped_count=sum(test_case.result == "skipped" for test_case in cases),
-        blocked_count=sum(test_case.result == "blocked" for test_case in cases),
-        error_count=sum(test_case.result == "error" for test_case in cases),
     )
 
 
@@ -68,23 +57,12 @@ def _report(
     *,
     idempotency_key: str,
     runner: TestReportRunner,
-    started_at: datetime,
-    status: RunStatus,
-    cases: list[TestReportCase],
-    report_url: str,
+    test_case: TestReportCase,
 ) -> TestReportRequest:
     return TestReportRequest(
         idempotency_key=idempotency_key,
         runner=runner,
-        run=TestReportRun(
-            started_at=started_at,
-            ended_at=started_at + timedelta(minutes=12),
-            duration_ms=720_000,
-            status=status,
-            report_url=report_url,
-        ),
-        summary=_summary(cases),
-        cases=cases,
+        case=test_case,
     )
 
 
@@ -119,112 +97,114 @@ def build_dev_reports() -> list[TestReportRequest]:
         _report(
             idempotency_key="dev-seed-login-pass",
             runner=runner_web_a,
-            started_at=base_time,
-            status="passed",
-            cases=[
-                _case("DEV-LOGIN-001", "login with password", "login", "passed"),
-                _case("DEV-LOGIN-002", "login with remembered session", "login", "passed"),
-                _case("DEV-LOGIN-003", "logout clears session", "login", "passed"),
-                _case("DEV-LOGIN-004", "password reset link opens", "login", "passed"),
-            ],
-            report_url="https://reports.example.test/dev-seed-login-pass",
+            test_case=_case(
+                "DEV-LOGIN-001",
+                "login with password",
+                "login",
+                "passed",
+                started_at=base_time,
+            ),
         ),
         _report(
             idempotency_key="dev-seed-checkout-fail",
             runner=runner_web_b,
-            started_at=base_time + timedelta(hours=1),
-            status="failed",
-            cases=[
-                _case("DEV-CHECKOUT-001", "cart totals are shown", "checkout", "passed"),
-                _case(
-                    "DEV-CHECKOUT-002",
-                    "coupon discount applies once",
-                    "checkout",
-                    "failed",
-                    error_type="AssertionError",
-                    error_message="expected discount 20, got 0",
-                ),
-                _case("DEV-CHECKOUT-003", "card payment succeeds", "checkout", "passed"),
-                _case("DEV-CHECKOUT-004", "invoice download is blocked", "checkout", "blocked"),
-            ],
-            report_url="https://reports.example.test/dev-seed-checkout-fail",
+            test_case=_case(
+                "DEV-CHECKOUT-002",
+                "coupon discount applies once",
+                "checkout",
+                "failed",
+                started_at=base_time + timedelta(hours=1),
+                error_type="AssertionError",
+                error_message="expected discount 20, got 0",
+            ),
         ),
         _report(
             idempotency_key="dev-seed-search-error",
             runner=runner_api,
-            started_at=base_time + timedelta(hours=2),
-            status="error",
-            cases=[
-                _case("DEV-SEARCH-001", "keyword search returns matches", "search", "passed"),
-                _case(
-                    "DEV-SEARCH-002",
-                    "index refresh completes",
-                    "search",
-                    "error",
-                    error_type="RuntimeError",
-                    error_message="search service timed out",
-                ),
-                _case("DEV-SEARCH-003", "facet filter is skipped", "search", "skipped"),
-                _case("DEV-SEARCH-004", "empty query returns validation error", "search", "passed"),
-            ],
-            report_url="https://reports.example.test/dev-seed-search-error",
+            test_case=_case(
+                "DEV-SEARCH-002",
+                "index refresh completes",
+                "search",
+                "error",
+                started_at=base_time + timedelta(hours=2),
+                error_type="RuntimeError",
+                error_message="search service timed out",
+            ),
         ),
         _report(
             idempotency_key="dev-seed-api-pass",
             runner=runner_api,
-            started_at=base_time + timedelta(days=1),
-            status="passed",
-            cases=[
-                _case("DEV-API-001", "create run endpoint accepts payload", "api", "passed"),
-                _case("DEV-API-002", "list runs endpoint paginates", "api", "passed"),
-                _case("DEV-API-003", "duplicate idempotency key is stable", "api", "passed"),
-                _case("DEV-API-004", "invalid report is rejected", "api", "passed"),
-            ],
-            report_url="https://reports.example.test/dev-seed-api-pass",
+            test_case=_case(
+                "DEV-API-001",
+                "create report endpoint accepts payload",
+                "api",
+                "passed",
+                started_at=base_time + timedelta(days=1),
+            ),
         ),
         _report(
             idempotency_key="dev-seed-mobile-fail",
             runner=runner_mobile,
-            started_at=base_time + timedelta(days=1, hours=3),
-            status="failed",
-            cases=[
-                _case("DEV-MOBILE-001", "app launches", "mobile", "passed"),
-                _case("DEV-MOBILE-002", "profile page renders", "mobile", "passed"),
-                _case(
-                    "DEV-MOBILE-003",
-                    "offline banner is hidden after reconnect",
-                    "mobile",
-                    "failed",
-                    error_type="AssertionError",
-                    error_message="offline banner remained visible",
-                ),
-                _case("DEV-MOBILE-004", "push settings are blocked", "mobile", "blocked"),
-            ],
-            report_url="https://reports.example.test/dev-seed-mobile-fail",
+            test_case=_case(
+                "DEV-MOBILE-003",
+                "offline banner is hidden after reconnect",
+                "mobile",
+                "failed",
+                started_at=base_time + timedelta(days=1, hours=3),
+                error_type="AssertionError",
+                error_message="offline banner remained visible",
+            ),
         ),
         _report(
-            idempotency_key="dev-seed-empty-execution",
+            idempotency_key="dev-seed-empty-skipped",
             runner=runner_web_a,
-            started_at=base_time + timedelta(days=2),
-            status="passed",
-            cases=[
-                _case("DEV-EMPTY-001", "feature flag disabled case", "empty", "skipped"),
-                _case("DEV-EMPTY-002", "external dependency unavailable", "empty", "blocked"),
-                _case("DEV-EMPTY-003", "manual precondition missing", "empty", "skipped"),
-                _case("DEV-EMPTY-004", "environment maintenance window", "empty", "blocked"),
-            ],
-            report_url="https://reports.example.test/dev-seed-empty-execution",
+            test_case=_case(
+                "DEV-EMPTY-001",
+                "feature flag disabled case",
+                "empty",
+                "skipped",
+                started_at=base_time + timedelta(days=2),
+            ),
         ),
     ]
+
+
+def _write_seed_report_file(
+    storage: ReportFileStorage,
+    report: TestReportRequest,
+) -> StoredReportFile:
+    relative_path = str(Path("seed") / f"{report.idempotency_key}-{uuid4().hex}.html")
+    report_path = storage.resolve(relative_path)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    content = (
+        "<html><body>"
+        f"<h1>{report.case.case_id}</h1>"
+        f"<p>{report.case.case_name}</p>"
+        f"<p>{report.case.result}</p>"
+        "</body></html>"
+    ).encode()
+    report_path.write_bytes(content)
+    return StoredReportFile(
+        relative_path=relative_path,
+        filename=f"{report.idempotency_key}.html",
+        content_type="text/html",
+        size_bytes=len(content),
+    )
 
 
 def seed_dev_data(session: Session) -> SeedResult:
     imported = 0
     duplicates = 0
-    importer = TestReportImporter(session)
+    settings = get_settings()
+    storage = ReportFileStorage(
+        storage_dir=settings.report_storage_dir,
+        max_upload_bytes=settings.report_max_upload_bytes,
+    )
+    importer = TestReportImporter(session, storage)
 
     for report in build_dev_reports():
-        response = importer.import_report(report)
+        stored_file = _write_seed_report_file(storage, report)
+        response = importer.import_report(report, stored_file)
         if response.status == "imported":
             imported += 1
         else:

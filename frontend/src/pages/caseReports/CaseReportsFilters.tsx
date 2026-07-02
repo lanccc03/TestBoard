@@ -1,7 +1,7 @@
 import { RotateCcwIcon, SearchIcon } from 'lucide-react'
 import type { FormEvent } from 'react'
 
-import type { RunStatus } from '@/api/runs'
+import type { CaseResult } from '@/api/caseReports'
 import { Button } from '@/components/ui/button'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Input } from '@/components/ui/input'
@@ -14,30 +14,32 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-export type RunsFilterDraft = {
+export type CaseReportsFilterDraft = {
   startedAtFrom: string
   startedAtTo: string
   runnerOwner: string
   runnerId: string
-  status: RunStatus | 'all'
+  result: CaseResult | 'all'
+  module: string
+  query: string
 }
 
-type RunsFiltersProps = {
-  filters: RunsFilterDraft
-  onFiltersChange: (filters: RunsFilterDraft) => void
+type CaseReportsFiltersProps = {
+  filters: CaseReportsFilterDraft
+  onFiltersChange: (filters: CaseReportsFilterDraft) => void
   onSubmit: () => void
   onReset: () => void
 }
 
-export function RunsFilters({
+export function CaseReportsFilters({
   filters,
   onFiltersChange,
   onSubmit,
   onReset,
-}: RunsFiltersProps) {
-  function updateFilter<Key extends keyof RunsFilterDraft>(
+}: CaseReportsFiltersProps) {
+  function updateFilter<Key extends keyof CaseReportsFilterDraft>(
     key: Key,
-    value: RunsFilterDraft[Key],
+    value: CaseReportsFilterDraft[Key],
   ) {
     onFiltersChange({ ...filters, [key]: value })
   }
@@ -49,7 +51,7 @@ export function RunsFilters({
 
   return (
     <form className="rounded-lg border p-4" onSubmit={handleSubmit}>
-      <FieldGroup className="grid gap-3 md:grid-cols-5">
+      <FieldGroup className="grid gap-3 md:grid-cols-6">
         <Field>
           <FieldLabel htmlFor="started-at-from">开始时间</FieldLabel>
           <Input
@@ -95,28 +97,48 @@ export function RunsFilters({
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="run-status">任务状态</FieldLabel>
+          <FieldLabel htmlFor="module">模块</FieldLabel>
+          <Input
+            id="module"
+            value={filters.module}
+            onChange={(event) => updateFilter('module', event.target.value)}
+          />
+        </Field>
+
+        <Field>
+          <FieldLabel htmlFor="case-result">结果</FieldLabel>
           <Select
-            value={filters.status}
+            value={filters.result}
             onValueChange={(value) =>
-              updateFilter('status', value as RunsFilterDraft['status'])
+              updateFilter('result', value as CaseReportsFilterDraft['result'])
             }
           >
-            <SelectTrigger id="run-status" className="w-full">
-              <SelectValue placeholder="全部状态" />
+            <SelectTrigger id="case-result" className="w-full">
+              <SelectValue placeholder="全部结果" />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 <SelectItem value="all">全部</SelectItem>
                 <SelectItem value="passed">通过</SelectItem>
                 <SelectItem value="failed">失败</SelectItem>
+                <SelectItem value="skipped">跳过</SelectItem>
+                <SelectItem value="blocked">阻塞</SelectItem>
                 <SelectItem value="error">异常</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
         </Field>
 
-        <div className="flex items-end gap-2 md:col-span-5">
+        <Field className="md:col-span-3">
+          <FieldLabel htmlFor="case-query">用例 ID 或名称</FieldLabel>
+          <Input
+            id="case-query"
+            value={filters.query}
+            onChange={(event) => updateFilter('query', event.target.value)}
+          />
+        </Field>
+
+        <div className="flex items-end gap-2 md:col-span-3">
           <Button type="submit">
             <SearchIcon data-icon="inline-start" />
             筛选

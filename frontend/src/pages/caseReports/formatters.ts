@@ -1,4 +1,4 @@
-import type { RunStatus } from '@/api/runs'
+import type { CaseResult } from '@/api/caseReports'
 
 const dateTimeFormatter = new Intl.DateTimeFormat('zh-CN', {
   dateStyle: 'medium',
@@ -33,20 +33,14 @@ export function formatDuration(durationMs: number | null): string {
   return `${minutes} 分 ${seconds} 秒`
 }
 
-export function formatPassRate(passRate: number | null): string {
-  if (passRate === null) {
-    return '-'
-  }
-
-  return `${Math.round(passRate * 100)}%`
-}
-
-export function getStatusLabel(status: RunStatus): string {
-  const labels: Record<RunStatus, string> = {
+export function getResultLabel(result: CaseResult): string {
+  const labels: Record<CaseResult, string> = {
     passed: '通过',
     failed: '失败',
+    skipped: '跳过',
+    blocked: '阻塞',
     error: '异常',
   }
 
-  return labels[status]
+  return labels[result]
 }

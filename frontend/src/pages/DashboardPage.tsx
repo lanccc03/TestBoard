@@ -32,7 +32,7 @@ export function DashboardPage() {
         description="业务查询切片完成后，首页会展示当天质量概览和失败入口。"
         action={
           <Button asChild variant="outline">
-            <Link to="/runs">查看任务列表</Link>
+            <Link to="/case-reports">查看用例报告</Link>
           </Button>
         }
       />

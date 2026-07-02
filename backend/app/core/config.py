@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,6 +13,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://testboard:testboard@localhost:5432/testboard"
     report_api_token: str = "change-me"
+    report_storage_dir: Path = Path("var/reports")
+    report_max_upload_bytes: int = 20 * 1024 * 1024
     backend_cors_origins: str = "http://localhost:5173"
 
     @property

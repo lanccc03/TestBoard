@@ -8,19 +8,19 @@ import {
 } from '@/components/ui/pagination'
 import { cn } from '@/lib/utils'
 
-type RunsPaginationProps = {
+type CaseReportsPaginationProps = {
   page: number
   total: number
   totalPages: number
   onPageChange: (page: number) => void
 }
 
-export function RunsPagination({
+export function CaseReportsPagination({
   page,
   total,
   totalPages,
   onPageChange,
-}: RunsPaginationProps) {
+}: CaseReportsPaginationProps) {
   const hasPrevious = page > 1
   const hasNext = page < totalPages
 

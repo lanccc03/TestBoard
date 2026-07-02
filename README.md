@@ -2,7 +2,7 @@
 
 公司内网测试结果平台。测试框架每条用例执行完成后，将该用例的执行结果和报告文件上报到平台；平台负责保存报告文件、查询和统计。
 
-当前已完成阶段 0：前后端工程骨架、环境配置、健康检查、基础测试和容器启动配置。
+当前代码已同步到单条用例报告模型：后端提供上报、报告文件保存、用例报告列表查询和报告文件访问接口；前端提供用例报告列表页面。
 
 ## 环境准备
 
@@ -24,6 +24,13 @@ cp .env.example .env
 
 ```bash
 DATABASE_URL=postgresql+psycopg://testboard:testboard@localhost:5432/testboard
+```
+
+报告文件默认保存到后端工作目录下的 `var/reports`，单文件默认最大 20 MiB：
+
+```bash
+REPORT_STORAGE_DIR=var/reports
+REPORT_MAX_UPLOAD_BYTES=20971520
 ```
 
 如果后端运行在 Docker 容器中，并连接宿主机 PostgreSQL，macOS/Windows 通常使用：
@@ -83,6 +90,39 @@ alembic upgrade head
 cd backend
 python -m app.dev.seed_data
 ```
+
+上报单条用例报告：
+
+```bash
+cd backend
+curl -X POST http://127.0.0.1:8000/api/v1/test-reports \
+  -H "Authorization: Bearer change-me" \
+  -F 'payload={
+    "idempotency_key": "runner-1:CASE-1:2026-06-30T10:00:00+08:00",
+    "runner": {
+      "runner_id": "runner-1",
+      "runner_name": "Runner 1",
+      "runner_owner": "alice",
+      "ip": "127.0.0.1"
+    },
+    "case": {
+      "case_id": "CASE-1",
+      "case_name": "login with password",
+      "module": "login",
+      "started_at": "2026-06-30T10:00:00+08:00",
+      "ended_at": "2026-06-30T10:00:01+08:00",
+      "duration_ms": 1000,
+      "result": "passed"
+    }
+  }' \
+  -F "report_file=@./README.md;type=text/markdown"
+```
+
+核心接口：
+
+- `POST /api/v1/test-reports`：multipart 上报，字段为 `payload` 和必填 `report_file`。
+- `GET /api/v1/case-reports`：分页查询用例报告，支持时间、owner、执行机、结果、模块和用例搜索。
+- `GET /api/v1/case-reports/{case_report_id}/report`：通过平台接口访问已保存报告文件。
 
 回滚全部迁移：
 
@@ -180,6 +220,7 @@ pnpm dev -- --host 0.0.0.0 --port 5173
 ## Docker Compose
 
 Compose 只启动应用服务，不包含 PostgreSQL 服务。启动前请先在宿主机准备 PostgreSQL，并配置 `DATABASE_URL`。
+后端容器会把报告文件保存到宿主机 `./backend/var/reports`。
 
 ```bash
 docker compose up --build

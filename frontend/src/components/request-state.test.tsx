@@ -5,27 +5,27 @@ import { EmptyState, ErrorState, LoadingState } from './request-state'
 
 describe('request state components', () => {
   it('renders an accessible loading state', () => {
-    render(<LoadingState title="加载任务列表" description="正在请求数据" />)
+    render(<LoadingState title="加载用例报告" description="正在请求数据" />)
 
     expect(screen.getByRole('status', { name: 'Loading' })).toBeInTheDocument()
-    expect(screen.getByText('加载任务列表')).toBeInTheDocument()
+    expect(screen.getByText('加载用例报告')).toBeInTheDocument()
     expect(screen.getByText('正在请求数据')).toBeInTheDocument()
   })
 
   it('renders an empty state with an optional action', () => {
     render(
       <EmptyState
-        title="暂无任务"
+        title="暂无用例报告"
         description="调整筛选条件后重试"
-        action={<a href="/runs">查看任务列表</a>}
+        action={<a href="/case-reports">查看用例报告</a>}
       />,
     )
 
-    expect(screen.getByText('暂无任务')).toBeInTheDocument()
+    expect(screen.getByText('暂无用例报告')).toBeInTheDocument()
     expect(screen.getByText('调整筛选条件后重试')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '查看任务列表' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: '查看用例报告' })).toHaveAttribute(
       'href',
-      '/runs',
+      '/case-reports',
     )
   })
 
