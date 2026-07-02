@@ -1,27 +1,125 @@
-import { Link } from 'react-router'
+import { useState } from 'react'
 
-import { EmptyState } from '@/components/request-state'
-import { Button } from '@/components/ui/button'
+import type { FailureCasesQuery } from '@/api/failureCases'
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from '@/components/request-state'
+import { CaseReportsPagination } from '@/features/caseReports/components/CaseReportsPagination'
+import {
+  FailureCasesFilters,
+  type FailureCasesFilterDraft,
+} from '@/features/failureCases/components/FailureCasesFilters'
+import { FailureCasesTable } from '@/features/failureCases/components/FailureCasesTable'
+import { useFailureCases } from '@/hooks/useFailureCases'
+
+const DEFAULT_PAGE_SIZE = 20
+const defaultFailureCasesFilterDraft: FailureCasesFilterDraft = {
+  startedAtFrom: '',
+  startedAtTo: '',
+  runnerOwner: '',
+  runnerId: '',
+  module: '',
+  caseId: '',
+}
+
+function dateTimeLocalToIso(value: string): string | undefined {
+  if (!value) {
+    return undefined
+  }
+
+  return new Date(value).toISOString()
+}
+
+function emptyStringToUndefined(value: string): string | undefined {
+  const trimmedValue = value.trim()
+  return trimmedValue || undefined
+}
+
+function toFailureCasesQuery(
+  filters: FailureCasesFilterDraft,
+  page: number,
+): FailureCasesQuery {
+  return {
+    page,
+    pageSize: DEFAULT_PAGE_SIZE,
+    startedAtFrom: dateTimeLocalToIso(filters.startedAtFrom),
+    startedAtTo: dateTimeLocalToIso(filters.startedAtTo),
+    runnerOwner: emptyStringToUndefined(filters.runnerOwner),
+    runnerId: emptyStringToUndefined(filters.runnerId),
+    module: emptyStringToUndefined(filters.module),
+    caseId: emptyStringToUndefined(filters.caseId),
+  }
+}
 
 export function FailuresPage() {
+  const [draftFilters, setDraftFilters] = useState<FailureCasesFilterDraft>(
+    defaultFailureCasesFilterDraft,
+  )
+  const [query, setQuery] = useState<FailureCasesQuery>(() =>
+    toFailureCasesQuery(defaultFailureCasesFilterDraft, 1),
+  )
+  const failureCasesQuery = useFailureCases(query)
+  const failureCasesData = failureCasesQuery.data
+
+  function handleSubmitFilters() {
+    setQuery(toFailureCasesQuery(draftFilters, 1))
+  }
+
+  function handleResetFilters() {
+    setDraftFilters(defaultFailureCasesFilterDraft)
+    setQuery(toFailureCasesQuery(defaultFailureCasesFilterDraft, 1))
+  }
+
+  function handlePageChange(page: number) {
+    setQuery((currentQuery) => ({ ...currentQuery, page }))
+  }
+
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <h2 className="text-2xl font-semibold tracking-normal">失败用例</h2>
         <p className="text-muted-foreground text-sm">
-          失败用例排查切片会在这里接入失败用例筛选、分页和关联用例报告跳转。
+          按时间、owner、执行机、模块和用例 ID 筛选失败或异常用例。
         </p>
       </div>
 
-      <EmptyState
-        title="暂无失败用例"
-        description="失败用例查询接口完成后，这里会展示错误类型、错误信息和报告入口。"
-        action={
-          <Button asChild variant="outline">
-            <Link to="/case-reports">查看用例报告</Link>
-          </Button>
-        }
+      <FailureCasesFilters
+        filters={draftFilters}
+        onFiltersChange={setDraftFilters}
+        onSubmit={handleSubmitFilters}
+        onReset={handleResetFilters}
       />
+
+      {failureCasesQuery.isPending ? (
+        <LoadingState
+          title="加载失败用例"
+          description="正在获取失败用例数据。"
+        />
+      ) : failureCasesQuery.isError ? (
+        <ErrorState
+          error={failureCasesQuery.error}
+          retry={() => {
+            void failureCasesQuery.refetch()
+          }}
+        />
+      ) : !failureCasesData || failureCasesData.items.length === 0 ? (
+        <EmptyState
+          title="暂无失败用例"
+          description="调整筛选条件或等待新的失败用例上报。"
+        />
+      ) : (
+        <>
+          <FailureCasesTable items={failureCasesData.items} />
+          <CaseReportsPagination
+            page={failureCasesData.page}
+            total={failureCasesData.total}
+            totalPages={failureCasesData.totalPages}
+            onPageChange={handlePageChange}
+          />
+        </>
+      )}
     </section>
   )
 }

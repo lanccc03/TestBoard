@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.test_case_report import TestCaseReport
 from app.schemas.case_report import CaseReportListQuery
+from app.schemas.failure_case import FailureCaseListQuery
 from app.schemas.test_report import TestReportRequest
 
 
@@ -46,6 +47,28 @@ def _apply_case_report_list_filters(
                 TestCaseReport.case_name.ilike(pattern),
             )
         )
+
+    return statement
+
+
+def _apply_failure_case_list_filters(
+    statement: Select[tuple[TestCaseReport]],
+    query: FailureCaseListQuery,
+) -> Select[tuple[TestCaseReport]]:
+    statement = statement.where(TestCaseReport.result.in_(("failed", "error")))
+
+    if query.started_at_from is not None:
+        statement = statement.where(TestCaseReport.started_at >= query.started_at_from)
+    if query.started_at_to is not None:
+        statement = statement.where(TestCaseReport.started_at <= query.started_at_to)
+    if query.runner_owner is not None:
+        statement = statement.where(TestCaseReport.runner_owner == query.runner_owner)
+    if query.runner_id is not None:
+        statement = statement.where(TestCaseReport.runner_id == query.runner_id)
+    if query.module is not None:
+        statement = statement.where(TestCaseReport.module == query.module)
+    if query.case_id is not None:
+        statement = statement.where(TestCaseReport.case_id.ilike(f"%{query.case_id}%"))
 
     return statement
 
@@ -98,6 +121,22 @@ class TestCaseReportRepository:
     def list_case_reports(self, query: CaseReportListQuery) -> list[TestCaseReport]:
         statement = select(TestCaseReport)
         statement = _apply_case_report_list_filters(statement, query)
+        statement = statement.order_by(
+            TestCaseReport.started_at.desc(),
+            TestCaseReport.case_report_id.desc(),
+        )
+        statement = statement.offset(query.offset).limit(query.page_size)
+        return list(self._session.scalars(statement).all())
+
+    def count_failure_cases(self, query: FailureCaseListQuery) -> int:
+        statement = select(TestCaseReport)
+        statement = _apply_failure_case_list_filters(statement, query)
+        count_statement = select(func.count()).select_from(statement.subquery())
+        return self._session.scalar(count_statement) or 0
+
+    def list_failure_cases(self, query: FailureCaseListQuery) -> list[TestCaseReport]:
+        statement = select(TestCaseReport)
+        statement = _apply_failure_case_list_filters(statement, query)
         statement = statement.order_by(
             TestCaseReport.started_at.desc(),
             TestCaseReport.case_report_id.desc(),

@@ -63,12 +63,13 @@ describe('App', () => {
     expect(screen.getByText('加载用例报告详情')).toBeInTheDocument()
   })
 
-  it('renders the failures placeholder at /failures', () => {
+  it('renders the failures page at /failures', () => {
     renderAppAt('/failures')
 
     expect(
       screen.getByRole('heading', { name: '失败用例' }),
     ).toBeInTheDocument()
-    expect(screen.getByText(/关联用例报告跳转/)).toBeInTheDocument()
+    expect(screen.getByText(/筛选失败或异常用例/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '筛选' })).toBeInTheDocument()
   })
 })

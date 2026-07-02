@@ -55,6 +55,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/cases/failures': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Failure Cases */
+    get: operations['list_failure_cases_api_v1_cases_failures_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/test-reports': {
     parameters: {
       query?: never
@@ -216,6 +233,60 @@ export interface components {
       /** Ip */
       ip: string | null
     }
+    /** FailureCaseListItem */
+    FailureCaseListItem: {
+      /**
+       * Case Report Id
+       * Format: uuid
+       */
+      case_report_id: string
+      /** Runner Id */
+      runner_id: string
+      /** Runner Owner */
+      runner_owner: string
+      /** Case Id */
+      case_id: string
+      /** Case Name */
+      case_name: string
+      /** Module */
+      module: string | null
+      /**
+       * Started At
+       * Format: date-time
+       */
+      started_at: string
+      /**
+       * Ended At
+       * Format: date-time
+       */
+      ended_at: string
+      /** Duration Ms */
+      duration_ms: number | null
+      /**
+       * Result
+       * @enum {string}
+       */
+      result: 'passed' | 'failed' | 'skipped' | 'blocked' | 'error'
+      /** Error Type */
+      error_type: string | null
+      /** Error Message */
+      error_message: string | null
+      /** Report Url */
+      report_url: string
+    }
+    /** FailureCaseListResponse */
+    FailureCaseListResponse: {
+      /** Items */
+      items: components['schemas']['FailureCaseListItem'][]
+      /** Page */
+      page: number
+      /** Page Size */
+      page_size: number
+      /** Total */
+      total: number
+      /** Total Pages */
+      total_pages: number
+    }
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -348,6 +419,44 @@ export interface operations {
         }
         content: {
           'application/json': unknown
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_failure_cases_api_v1_cases_failures_get: {
+    parameters: {
+      query?: {
+        started_at_from?: string | null
+        started_at_to?: string | null
+        runner_owner?: string | null
+        runner_id?: string | null
+        module?: string | null
+        case_id?: string | null
+        page?: number
+        page_size?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['FailureCaseListResponse']
         }
       }
       /** @description Validation Error */

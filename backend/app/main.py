@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.case_reports import router as case_reports_router
+from app.api.v1.failure_cases import router as failure_cases_router
 from app.api.v1.test_reports import router as test_reports_router
 from app.core.config import get_settings
 
@@ -16,6 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(case_reports_router)
+app.include_router(failure_cases_router)
 app.include_router(test_reports_router)
 
 
