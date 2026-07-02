@@ -166,6 +166,19 @@ def build_dev_reports() -> list[TestReportRequest]:
                 started_at=base_time + timedelta(days=2),
             ),
         ),
+        _report(
+            idempotency_key="dev-seed-payment-blocked",
+            runner=runner_web_b,
+            test_case=_case(
+                "DEV-PAYMENT-004",
+                "payment provider sandbox is unavailable",
+                "payment",
+                "blocked",
+                started_at=base_time + timedelta(days=2, hours=2),
+                error_type="EnvironmentBlocked",
+                error_message="payment provider sandbox is unavailable",
+            ),
+        ),
     ]
 
 
