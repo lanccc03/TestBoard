@@ -25,6 +25,10 @@ TestBoard 是公司内网测试结果平台。后端使用 FastAPI、Pydantic v2
 - 本地启动：`pnpm dev`。
 - 前端变更验证：`pnpm lint`、`pnpm format:check`、`pnpm test`、`pnpm build`。
 - 基础 UI 控件优先复用或通过 shadcn/ui 引入，不要手写；图标优先使用 `lucide-react`。
+- `src/pages/` 只放路由级页面；页面内部组件、业务展示组件和业务工具函数放到 `src/features/<feature>/`。
+- `src/components/` 只放跨业务复用组件，`src/components/ui/` 保持为基础 UI 控件层。
+- `src/api/` 和 `src/hooks/` 保持当前共享分层；只有当某类能力明确只属于单一业务 feature 且不会跨页面复用时，才考虑迁入对应 `features/`。
+- 避免新增 barrel export；优先使用直接路径导入，保持依赖关系明确。
 
 ## 通用规则
 

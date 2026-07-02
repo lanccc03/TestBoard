@@ -1,8 +1,7 @@
 import { ExternalLinkIcon } from 'lucide-react'
 import { Link } from 'react-router'
 
-import type { CaseReportListItem, CaseResult } from '@/api/caseReports'
-import { Badge } from '@/components/ui/badge'
+import type { CaseReportListItem } from '@/api/caseReports'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -12,25 +11,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  formatDateTime,
+  formatDuration,
+} from '@/features/caseReports/lib/formatters'
 
-import { formatDateTime, formatDuration, getResultLabel } from './formatters'
+import { CaseResultBadge } from './CaseResultBadge'
 
 type CaseReportsTableProps = {
   items: CaseReportListItem[]
-}
-
-function getResultVariant(
-  result: CaseResult,
-): 'default' | 'destructive' | 'outline' {
-  if (result === 'failed' || result === 'error') {
-    return 'destructive'
-  }
-
-  if (result === 'skipped' || result === 'blocked') {
-    return 'outline'
-  }
-
-  return 'default'
 }
 
 export function CaseReportsTable({ items }: CaseReportsTableProps) {
@@ -67,9 +56,7 @@ export function CaseReportsTable({ items }: CaseReportsTableProps) {
               <TableCell>{item.runnerId}</TableCell>
               <TableCell>{item.runnerOwner}</TableCell>
               <TableCell>
-                <Badge variant={getResultVariant(item.result)}>
-                  {getResultLabel(item.result)}
-                </Badge>
+                <CaseResultBadge result={item.result} />
               </TableCell>
               <TableCell>{formatDuration(item.durationMs)}</TableCell>
               <TableCell>

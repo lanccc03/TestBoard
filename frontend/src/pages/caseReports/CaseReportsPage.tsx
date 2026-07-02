@@ -6,14 +6,13 @@ import {
   ErrorState,
   LoadingState,
 } from '@/components/request-state'
-import { useCaseReports } from '@/hooks/useCaseReports'
-
 import {
   CaseReportsFilters,
   type CaseReportsFilterDraft,
-} from './CaseReportsFilters'
-import { CaseReportsPagination } from './CaseReportsPagination'
-import { CaseReportsTable } from './CaseReportsTable'
+} from '@/features/caseReports/components/CaseReportsFilters'
+import { CaseReportsPagination } from '@/features/caseReports/components/CaseReportsPagination'
+import { CaseReportsTable } from '@/features/caseReports/components/CaseReportsTable'
+import { useCaseReports } from '@/hooks/useCaseReports'
 
 const DEFAULT_PAGE_SIZE = 20
 const defaultCaseReportsFilterDraft: CaseReportsFilterDraft = {

@@ -2,7 +2,6 @@ import { ArrowLeftIcon, ExternalLinkIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
-import type { CaseResult } from '@/api/caseReports'
 import {
   EmptyState,
   ErrorState,
@@ -10,27 +9,12 @@ import {
 } from '@/components/request-state'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { useCaseReportDetail } from '@/hooks/useCaseReportDetail'
-
+import { CaseResultBadge } from '@/features/caseReports/components/CaseResultBadge'
 import {
   formatDateTime,
   formatDuration,
-  getResultLabel,
-} from './caseReports/formatters'
-
-function getResultVariant(
-  result: CaseResult,
-): 'default' | 'destructive' | 'outline' {
-  if (result === 'failed' || result === 'error') {
-    return 'destructive'
-  }
-
-  if (result === 'skipped' || result === 'blocked') {
-    return 'outline'
-  }
-
-  return 'default'
-}
+} from '@/features/caseReports/lib/formatters'
+import { useCaseReportDetail } from '@/hooks/useCaseReportDetail'
 
 function formatFileSize(sizeBytes: number): string {
   if (sizeBytes < 1024) {
@@ -145,9 +129,7 @@ export function CaseReportDetailPage() {
             <h2 className="text-2xl font-semibold tracking-normal">
               {detail.caseName}
             </h2>
-            <Badge variant={getResultVariant(detail.result)}>
-              {getResultLabel(detail.result)}
-            </Badge>
+            <CaseResultBadge result={detail.result} />
           </div>
           <p className="text-muted-foreground font-mono text-sm">
             {detail.caseId}

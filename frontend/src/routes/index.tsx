@@ -1,7 +1,7 @@
 import { Route, Routes } from 'react-router'
 
 import { AppLayout } from '@/layouts/AppLayout'
-import { CaseReportDetailPage } from '@/pages/CaseReportDetailPage'
+import { CaseReportDetailPage } from '@/pages/caseReports/CaseReportDetailPage'
 import { CaseReportsPage } from '@/pages/caseReports/CaseReportsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { FailuresPage } from '@/pages/FailuresPage'
