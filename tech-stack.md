@@ -13,17 +13,18 @@
 - 前端请求和数据层：openapi-fetch + TanStack Query + TanStack Table
 - 部署：本地 PostgreSQL + Docker Compose + Nginx 或 Caddy
 
-该选型面向首版内网测试平台，重点服务于测试结果上报、幂等入库、任务查询、用例明细、统计看板和失败分析。
+该选型面向首版内网测试平台，重点服务于单条用例结果和报告文件上报、幂等入库、用例报告查询、统计看板和失败分析。
 
 ## 2. 项目特点
 
 根据 `prd.md`，当前系统有以下特点：
 
 - 平台只负责接收和展示测试结果，不负责任务调度和用例执行。
-- 测试结果在执行完成后一次性上报，不需要实时过程监控。
-- 首版不保存附件，只保存报告、日志、截图等链接。
+- 每条用例执行完成后独立上报，不需要实时过程监控。
+- 每条用例会单独生成测试报告，上报时必须携带报告文件，由平台保存。
 - 首版只在公司内网使用。
-- 核心数据模型清晰，主要围绕执行机、测试任务、用例结果三类实体。
+- 核心数据模型清晰，主要围绕执行机和用例报告两类实体。
+- 首版不建模测试套件或测试任务。
 
 因此，技术栈应优先考虑：
 
@@ -40,8 +41,9 @@
 
 用途：
 
-- 提供测试结果上报接口。
-- 提供任务列表、任务详情、统计看板等查询接口。
+- 提供单条用例报告上报接口。
+- 保存上报的报告文件，并提供报告访问入口。
+- 提供用例报告列表、详情、统计看板等查询接口。
 - 自动生成 OpenAPI 文档，方便测试框架和前端对接。
 
 选择原因：
@@ -55,19 +57,21 @@
 
 - `POST /api/v1/test-reports`
 - `GET /api/v1/dashboard/summary`
-- `GET /api/v1/runs`
-- `GET /api/v1/runs/{run_id}`
+- `GET /api/v1/case-reports`
+- `GET /api/v1/case-reports/{case_report_id}`
+- `GET /api/v1/case-reports/{case_report_id}/report`
 - `GET /api/v1/cases/failures`
 - `GET /api/v1/stats/by-date`
 - `GET /api/v1/stats/by-owner`
 - `GET /api/v1/stats/by-runner`
+- `GET /api/v1/stats/by-case`
 
 ### 3.2 Pydantic v2
 
 用途：
 
 - 定义 API 请求和响应 schema。
-- 校验测试结果上报数据。
+- 校验用例报告上报数据和报告文件必传规则。
 - 管理环境变量和配置。
 
 推荐搭配：
@@ -80,7 +84,8 @@
 用途：
 
 - 定义数据库模型。
-- 实现测试任务、用例结果、执行机信息的增删查改。
+- 实现执行机和用例报告的增删查改。
+- 实现报告文件元数据持久化。
 - 实现统计查询。
 
 选择原因：
@@ -109,8 +114,8 @@
 
 用途：
 
-- 保存执行机、测试任务、用例结果。
-- 支撑按时间、owner、执行机、状态、用例 ID 的查询和统计。
+- 保存执行机、用例报告和报告文件元数据。
+- 支撑按时间、owner、执行机、状态、模块、用例 ID 的查询和统计。
 
 部署约定：
 
@@ -127,20 +132,32 @@
 核心表：
 
 - `runners`
-- `test_runs`
-- `test_case_results`
+- `test_case_reports`
 
 关键索引：
 
-- `test_runs.idempotency_key` 唯一索引。
-- `test_runs.started_at` 普通索引。
-- `test_runs.runner_owner` 普通索引。
-- `test_runs.runner_id` 普通索引。
-- `test_runs.status` 普通索引。
-- `test_case_results.run_id` 普通索引。
-- `test_case_results.case_id` 普通索引。
-- `test_case_results.result` 普通索引。
-- `test_case_results.module` 普通索引。
+- `test_case_reports.idempotency_key` 唯一索引。
+- `test_case_reports.started_at` 普通索引。
+- `test_case_reports.runner_owner` 普通索引。
+- `test_case_reports.runner_id` 普通索引。
+- `test_case_reports.result` 普通索引。
+- `test_case_reports.case_id` 普通索引。
+- `test_case_reports.module` 普通索引。
+
+报告文件字段：
+
+- `report_file_path`：平台保存的报告文件相对路径。
+- `report_filename`：原始报告文件名。
+- `report_content_type`：报告文件 MIME 类型。
+- `report_size_bytes`：报告文件大小。
+
+文件保存约定：
+
+- `POST /api/v1/test-reports` 使用 `multipart/form-data`。
+- 表单字段 `payload` 保存用例执行结果 JSON。
+- 表单字段 `report_file` 保存必传报告文件。
+- 后端生成内部唯一文件路径，避免直接信任上传文件名。
+- 查询接口返回平台生成的报告访问入口，前端不直接依赖服务器文件路径。
 
 ## 4. 前端技术栈
 
@@ -149,7 +166,7 @@
 用途：
 
 - 构建内网测试平台管理后台。
-- 实现首页看板、任务列表、任务详情、失败用例列表和统计页面。
+- 实现首页看板、用例报告列表、用例报告详情、失败用例列表和统计页面。
 
 选择原因：
 
@@ -171,11 +188,6 @@
 - 比 Ant Design 更不容易被固定视觉风格锁住。
 - 对当前项目这类中等复杂度后台更灵活。
 
-取舍：
-
-- 首版会比 Ant Design 多写一些表格、筛选和布局组合代码。
-- 长期可控性更好，适合逐步沉淀自己的测试平台组件。
-
 ### 4.3 React Router
 
 用途：
@@ -185,8 +197,8 @@
 建议路由：
 
 - `/`：首页看板
-- `/runs`：任务列表
-- `/runs/:runId`：任务详情
+- `/case-reports`：用例报告列表
+- `/case-reports/:caseReportId`：用例报告详情
 - `/failures`：失败用例
 - `/stats`：统计查询
 
@@ -200,15 +212,9 @@
 适用场景：
 
 - 首页看板数据。
-- 任务列表查询。
-- 任务详情查询。
+- 用例报告列表查询。
+- 用例报告详情查询。
 - 统计图表查询。
-
-说明：
-
-- `TanStack Query` 不直接替代 HTTP client。
-- 实际 HTTP 请求由 `openapi-fetch` 发起。
-- `TanStack Query` 负责包裹这些请求，并管理页面所需的查询状态。
 
 ### 4.5 openapi-fetch
 
@@ -218,13 +224,6 @@
 - 基于 FastAPI 暴露的 OpenAPI schema 提供类型安全请求。
 - 统一处理 API base URL、请求 header、错误返回和响应数据。
 
-选择原因：
-
-- 当前后端使用 FastAPI，天然可以提供 `/openapi.json`。
-- `openapi-fetch` 可以配合 `openapi-typescript` 生成的类型使用。
-- 相比直接使用 `fetch`，字段、路径、请求参数和响应类型更可控。
-- 相比默认引入 `axios`，更贴合本项目的 OpenAPI 契约驱动方式。
-
 建议封装：
 
 ```text
@@ -233,7 +232,7 @@ frontend/src/
     schema.d.ts
     client.ts
     dashboard.ts
-    runs.ts
+    caseReports.ts
     cases.ts
     stats.ts
 ```
@@ -242,20 +241,19 @@ frontend/src/
 
 - `schema.d.ts`：由 `openapi-typescript` 根据后端 `/openapi.json` 生成。
 - `client.ts`：创建 `openapi-fetch` client，配置 base URL 和公共 header。
-- `runs.ts`、`dashboard.ts` 等：按业务模块封装 API 函数。
+- `caseReports.ts`、`dashboard.ts` 等：按业务模块封装 API 函数。
 - React 页面和 hooks 不直接调用底层 client，而是调用业务 API 函数。
 
 ### 4.6 TanStack Table
 
 用途：
 
-- 构建任务列表和用例结果列表。
+- 构建用例报告列表。
 - 支持分页、排序、筛选、列定义和表格状态管理。
 
 适用页面：
 
-- 任务列表。
-- 任务详情中的用例结果列表。
+- 用例报告列表。
 - 失败用例列表。
 - 按用例统计失败次数列表。
 
@@ -273,6 +271,7 @@ frontend/src/
 - owner 筛选。
 - 执行机筛选。
 - 状态筛选。
+- 模块筛选。
 - 用例 ID 或用例名称搜索。
 
 ### 4.8 ECharts
@@ -283,8 +282,8 @@ frontend/src/
 
 适用图表：
 
-- 按日期的任务数、用例数、通过率趋势。
-- 按 owner 的任务数、失败数、通过率对比。
+- 按日期的用例数、失败数、通过率趋势。
+- 按 owner 的用例数、失败数、通过率对比。
 - 按执行机的最近执行结果和上报时间展示。
 
 ## 5. API 类型同步
@@ -302,15 +301,15 @@ frontend/src/
 1. 后端通过 FastAPI 暴露 `/openapi.json`。
 2. 前端使用 `openapi-typescript` 生成 API 类型。
 3. 前端使用 `openapi-fetch` 创建类型安全 API client。
-4. 按业务模块封装请求函数，例如 `runs.ts`、`dashboard.ts`、`stats.ts`。
+4. 按业务模块封装请求函数，例如 `caseReports.ts`、`dashboard.ts`、`stats.ts`。
 5. 页面通过 `TanStack Query` 调用业务请求函数，管理缓存、加载和错误状态。
 
 示例分层：
 
 ```text
 React Page
-  -> useRunsQuery
-    -> getRuns
+  -> useCaseReportsQuery
+    -> getCaseReports
       -> openapi-fetch client
         -> FastAPI
 ```
@@ -383,7 +382,7 @@ React Page
 - token 通过环境变量配置，不写入代码仓库。
 - 前端页面依赖内网访问控制。
 - 如果公司已有 SSO，后续再接入统一登录。
-- 对 `POST /api/v1/test-reports` 限制请求体大小，避免异常大 payload。
+- 对 `POST /api/v1/test-reports` 限制请求体和报告文件大小。
 - 对入库字段长度做明确限制，尤其是 `error_message`、URL、名称字段。
 
 ## 9. 暂不引入的技术
@@ -393,9 +392,9 @@ React Page
 - Redis：当前没有缓存、分布式锁、实时状态等强需求。
 - Celery/RQ：平台不负责任务调度和执行。
 - WebSocket：PRD 明确不需要实时过程监控。
-- Elasticsearch/OpenSearch：首版只保存日志链接，不做日志全文检索。
+- Elasticsearch/OpenSearch：首版只保存报告文件，不做全文检索。
 - Kubernetes：内网首版使用本地 PostgreSQL 加应用层 Docker Compose 足够。
-- 对象存储：首版不保存附件，只保存报告、日志、截图链接。
+- 对象存储：首版先使用平台本地文件存储，不引入对象存储。
 
 这些技术可以在需求明确后再引入，避免首版复杂度过高。
 
@@ -424,7 +423,7 @@ TestBoard/
         schema.d.ts
         client.ts
         dashboard.ts
-        runs.ts
+        caseReports.ts
         cases.ts
         stats.ts
       components/
@@ -448,12 +447,12 @@ TestBoard/
 
 1. 初始化后端项目：FastAPI、配置、健康检查、本地 PostgreSQL 连接。
 2. 建立 PostgreSQL 表结构和 Alembic migration。
-3. 实现 `POST /api/v1/test-reports`，包括幂等逻辑。
-4. 实现任务列表、任务详情、基础统计 API。
+3. 实现 `POST /api/v1/test-reports`，包括单条用例报告入库、报告文件保存和幂等逻辑。
+4. 实现用例报告列表、详情、失败用例和基础统计 API。
 5. 初始化前端项目：React、Vite、Tailwind、shadcn/ui。
 6. 接入 OpenAPI 类型生成和 `openapi-fetch` API client。
-7. 使用 `TanStack Query` 封装首页看板、任务列表、任务详情查询 hooks。
-8. 实现首页看板、任务列表、任务详情。
+7. 使用 `TanStack Query` 封装首页看板、用例报告列表、详情查询 hooks。
+8. 实现首页看板、用例报告列表、用例报告详情和失败用例页。
 9. 补充测试、本地 PostgreSQL 配置、Docker Compose 和部署说明。
 
 ## 12. 参考文档
@@ -468,8 +467,3 @@ TestBoard/
 - uv：https://docs.astral.sh/uv/
 - openapi-fetch：https://openapi-ts.dev/openapi-fetch/
 - openapi-typescript：https://openapi-ts.dev/
-- TanStack Query：https://tanstack.com/query/latest
-- TanStack Table：https://tanstack.com/table/latest
-- React Hook Form：https://react-hook-form.com/
-- Zod：https://zod.dev/
-- ECharts：https://echarts.apache.org/
