@@ -11,9 +11,11 @@ from app.db.session import get_db
 from app.models.test_case_report import TestCaseReport
 from app.repositories.test_case_reports import TestCaseReportRepository
 from app.schemas.case_report import (
+    CaseReportDetailResponse,
     CaseReportListItem,
     CaseReportListQuery,
     CaseReportListResponse,
+    CaseReportRunnerInfo,
 )
 from app.schemas.test_report import CaseResult
 from app.services.report_file_storage import ReportFileStorage
@@ -77,6 +79,33 @@ def _to_list_item(case_report: TestCaseReport) -> CaseReportListItem:
     )
 
 
+def _to_detail_response(case_report: TestCaseReport) -> CaseReportDetailResponse:
+    return CaseReportDetailResponse(
+        case_report_id=case_report.case_report_id,
+        runner=CaseReportRunnerInfo(
+            runner_id=case_report.runner.runner_id,
+            runner_name=case_report.runner.runner_name,
+            runner_owner=case_report.runner.runner_owner,
+            ip=case_report.runner.ip,
+        ),
+        runner_owner=case_report.runner_owner,
+        case_id=case_report.case_id,
+        case_name=case_report.case_name,
+        module=case_report.module,
+        started_at=case_report.started_at,
+        ended_at=case_report.ended_at,
+        duration_ms=case_report.duration_ms,
+        result=cast(CaseResult, case_report.result),
+        error_type=case_report.error_type,
+        error_message=case_report.error_message,
+        report_url=_report_url(case_report.case_report_id),
+        report_filename=case_report.report_filename,
+        report_content_type=case_report.report_content_type,
+        report_size_bytes=case_report.report_size_bytes,
+        created_at=case_report.created_at,
+    )
+
+
 def _make_storage() -> ReportFileStorage:
     settings = get_settings()
     return ReportFileStorage(
@@ -94,6 +123,21 @@ def list_case_reports(
     total = repository.count_case_reports(query)
     items = [_to_list_item(case_report) for case_report in repository.list_case_reports(query)]
     return CaseReportListResponse.from_items(items=items, query=query, total=total)
+
+
+@router.get("/case-reports/{case_report_id}", response_model=CaseReportDetailResponse)
+def get_case_report_detail(
+    case_report_id: UUID,
+    db: Annotated[Session, Depends(get_db)],
+) -> CaseReportDetailResponse:
+    case_report = TestCaseReportRepository(db).get(case_report_id)
+    if case_report is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Case report not found",
+        )
+
+    return _to_detail_response(case_report)
 
 
 @router.get("/case-reports/{case_report_id}/report")

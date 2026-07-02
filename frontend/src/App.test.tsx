@@ -57,13 +57,10 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: '筛选' })).toBeInTheDocument()
   })
 
-  it('renders the case report detail placeholder with route params', () => {
+  it('renders the case report detail route', () => {
     renderAppAt('/case-reports/test-report-1')
 
-    expect(
-      screen.getByRole('heading', { name: '用例报告详情' }),
-    ).toBeInTheDocument()
-    expect(screen.getByText('test-report-1')).toBeInTheDocument()
+    expect(screen.getByText('加载用例报告详情')).toBeInTheDocument()
   })
 
   it('renders the failures placeholder at /failures', () => {

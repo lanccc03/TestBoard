@@ -39,6 +39,33 @@ class CaseReportListItem(BaseModel):
     error_message: str | None
 
 
+class CaseReportRunnerInfo(BaseModel):
+    runner_id: str
+    runner_name: str | None
+    runner_owner: str
+    ip: str | None
+
+
+class CaseReportDetailResponse(BaseModel):
+    case_report_id: UUID
+    runner: CaseReportRunnerInfo
+    runner_owner: str
+    case_id: str
+    case_name: str
+    module: str | None
+    started_at: datetime
+    ended_at: datetime
+    duration_ms: int | None
+    result: CaseResult
+    error_type: str | None
+    error_message: str | None
+    report_url: str
+    report_filename: str
+    report_content_type: str
+    report_size_bytes: int
+    created_at: datetime
+
+
 class CaseReportListResponse(BaseModel):
     items: list[CaseReportListItem]
     page: int

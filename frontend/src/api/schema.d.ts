@@ -21,6 +21,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/case-reports/{case_report_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Case Report Detail */
+    get: operations['get_case_report_detail_api_v1_case_reports__case_report_id__get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/case-reports/{case_report_id}/report': {
     parameters: {
       query?: never
@@ -83,6 +100,57 @@ export interface components {
       /** Report File */
       report_file: string
     }
+    /** CaseReportDetailResponse */
+    CaseReportDetailResponse: {
+      /**
+       * Case Report Id
+       * Format: uuid
+       */
+      case_report_id: string
+      runner: components['schemas']['CaseReportRunnerInfo']
+      /** Runner Owner */
+      runner_owner: string
+      /** Case Id */
+      case_id: string
+      /** Case Name */
+      case_name: string
+      /** Module */
+      module: string | null
+      /**
+       * Started At
+       * Format: date-time
+       */
+      started_at: string
+      /**
+       * Ended At
+       * Format: date-time
+       */
+      ended_at: string
+      /** Duration Ms */
+      duration_ms: number | null
+      /**
+       * Result
+       * @enum {string}
+       */
+      result: 'passed' | 'failed' | 'skipped' | 'blocked' | 'error'
+      /** Error Type */
+      error_type: string | null
+      /** Error Message */
+      error_message: string | null
+      /** Report Url */
+      report_url: string
+      /** Report Filename */
+      report_filename: string
+      /** Report Content Type */
+      report_content_type: string
+      /** Report Size Bytes */
+      report_size_bytes: number
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+    }
     /** CaseReportListItem */
     CaseReportListItem: {
       /**
@@ -136,6 +204,17 @@ export interface components {
       total: number
       /** Total Pages */
       total_pages: number
+    }
+    /** CaseReportRunnerInfo */
+    CaseReportRunnerInfo: {
+      /** Runner Id */
+      runner_id: string
+      /** Runner Name */
+      runner_name: string | null
+      /** Runner Owner */
+      runner_owner: string
+      /** Ip */
+      ip: string | null
     }
     /** HTTPValidationError */
     HTTPValidationError: {
@@ -207,6 +286,37 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['CaseReportListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_case_report_detail_api_v1_case_reports__case_report_id__get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        case_report_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['CaseReportDetailResponse']
         }
       }
       /** @description Validation Error */

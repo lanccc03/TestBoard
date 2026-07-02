@@ -3,6 +3,8 @@ import type { components } from './schema'
 
 type ApiCaseReportListItem = components['schemas']['CaseReportListItem']
 type ApiCaseReportListResponse = components['schemas']['CaseReportListResponse']
+type ApiCaseReportDetailResponse =
+  components['schemas']['CaseReportDetailResponse']
 
 export type CaseResult = ApiCaseReportListItem['result']
 
@@ -34,6 +36,33 @@ export type CaseReportListItem = {
   errorMessage: string | null
 }
 
+export type CaseReportRunner = {
+  runnerId: string
+  runnerName: string | null
+  runnerOwner: string
+  ip: string | null
+}
+
+export type CaseReportDetail = {
+  caseReportId: string
+  runner: CaseReportRunner
+  runnerOwner: string
+  caseId: string
+  caseName: string
+  module: string | null
+  startedAt: string
+  endedAt: string
+  durationMs: number | null
+  result: CaseResult
+  errorType: string | null
+  errorMessage: string | null
+  reportUrl: string
+  reportFilename: string
+  reportContentType: string
+  reportSizeBytes: number
+  createdAt: string
+}
+
 export type CaseReportsResponse = {
   items: CaseReportListItem[]
   page: number
@@ -59,6 +88,35 @@ function mapCaseReportListItem(
     reportUrl: item.report_url,
     errorType: item.error_type,
     errorMessage: item.error_message,
+  }
+}
+
+function mapCaseReportDetail(
+  detail: ApiCaseReportDetailResponse,
+): CaseReportDetail {
+  return {
+    caseReportId: detail.case_report_id,
+    runner: {
+      runnerId: detail.runner.runner_id,
+      runnerName: detail.runner.runner_name,
+      runnerOwner: detail.runner.runner_owner,
+      ip: detail.runner.ip,
+    },
+    runnerOwner: detail.runner_owner,
+    caseId: detail.case_id,
+    caseName: detail.case_name,
+    module: detail.module,
+    startedAt: detail.started_at,
+    endedAt: detail.ended_at,
+    durationMs: detail.duration_ms,
+    result: detail.result,
+    errorType: detail.error_type,
+    errorMessage: detail.error_message,
+    reportUrl: detail.report_url,
+    reportFilename: detail.report_filename,
+    reportContentType: detail.report_content_type,
+    reportSizeBytes: detail.report_size_bytes,
+    createdAt: detail.created_at,
   }
 }
 
@@ -102,4 +160,29 @@ export async function getCaseReports(
   }
 
   return mapCaseReportsResponse(data)
+}
+
+export async function getCaseReportDetail(
+  caseReportId: string,
+): Promise<CaseReportDetail> {
+  const { data, error } = await apiClient.GET(
+    '/api/v1/case-reports/{case_report_id}',
+    {
+      params: {
+        path: {
+          case_report_id: caseReportId,
+        },
+      },
+    },
+  )
+
+  if (error) {
+    throw error
+  }
+
+  if (!data) {
+    throw new Error('用例报告详情响应为空')
+  }
+
+  return mapCaseReportDetail(data)
 }

@@ -275,3 +275,61 @@ async def test_list_case_reports_rejects_invalid_query_params(
     response = await client.get("/api/v1/case-reports", params=params)
 
     assert response.status_code == 422
+
+
+@pytest.mark.anyio
+async def test_get_case_report_detail_returns_runner_case_error_and_report_metadata(
+    client: httpx.AsyncClient,
+    db_session: Session,
+) -> None:
+    _seed_case_reports(db_session)
+
+    response = await client.get("/api/v1/case-reports/aaaaaaaa-0000-0000-0000-000000000002")
+
+    assert response.status_code == 200
+    response_json = response.json()
+    assert response_json == {
+        "case_report_id": "aaaaaaaa-0000-0000-0000-000000000002",
+        "runner": {
+            "runner_id": "runner-b",
+            "runner_name": "Runner B",
+            "runner_owner": "bob",
+            "ip": "127.0.0.1",
+        },
+        "runner_owner": "bob",
+        "case_id": "CASE-2",
+        "case_name": "Checkout applies coupon",
+        "module": "checkout",
+        "started_at": response_json["started_at"],
+        "ended_at": response_json["ended_at"],
+        "duration_ms": 600000,
+        "result": "failed",
+        "error_type": "AssertionError",
+        "error_message": "expected discount",
+        "report_url": "/api/v1/case-reports/aaaaaaaa-0000-0000-0000-000000000002/report",
+        "report_filename": "report.html",
+        "report_content_type": "text/html",
+        "report_size_bytes": 100,
+        "created_at": response_json["created_at"],
+    }
+    assert response_json["started_at"].startswith("2026-06-30T10:00:00")
+    assert response_json["ended_at"].startswith("2026-06-30T10:10:00")
+
+
+@pytest.mark.anyio
+async def test_get_case_report_detail_returns_404_when_not_found(
+    client: httpx.AsyncClient,
+) -> None:
+    response = await client.get("/api/v1/case-reports/bbbbbbbb-0000-0000-0000-000000000099")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Case report not found"}
+
+
+@pytest.mark.anyio
+async def test_get_case_report_detail_rejects_invalid_uuid(
+    client: httpx.AsyncClient,
+) -> None:
+    response = await client.get("/api/v1/case-reports/not-a-uuid")
+
+    assert response.status_code == 422
