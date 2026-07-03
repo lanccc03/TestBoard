@@ -55,6 +55,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/dashboard/summary': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Dashboard Summary */
+    get: operations['get_dashboard_summary_api_v1_dashboard_summary_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/cases/failures': {
     parameters: {
       query?: never
@@ -232,6 +249,126 @@ export interface components {
       runner_owner: string
       /** Ip */
       ip: string | null
+    }
+    /** DashboardOwnerSummary */
+    DashboardOwnerSummary: {
+      /** Runner Owner */
+      runner_owner: string
+      /** Total */
+      total: number
+      /** Passed */
+      passed: number
+      /** Failed */
+      failed: number
+      /** Pass Rate */
+      pass_rate: number | null
+    }
+    /** DashboardRecentFailure */
+    DashboardRecentFailure: {
+      /**
+       * Case Report Id
+       * Format: uuid
+       */
+      case_report_id: string
+      /** Runner Id */
+      runner_id: string
+      /** Runner Owner */
+      runner_owner: string
+      /** Case Id */
+      case_id: string
+      /** Case Name */
+      case_name: string
+      /** Module */
+      module: string | null
+      /**
+       * Started At
+       * Format: date-time
+       */
+      started_at: string
+      /**
+       * Ended At
+       * Format: date-time
+       */
+      ended_at: string
+      /** Duration Ms */
+      duration_ms: number | null
+      /**
+       * Result
+       * @enum {string}
+       */
+      result: 'passed' | 'failed' | 'skipped' | 'blocked' | 'error'
+      /** Error Type */
+      error_type: string | null
+      /** Error Message */
+      error_message: string | null
+      /** Report Url */
+      report_url: string
+    }
+    /** DashboardRecentRunner */
+    DashboardRecentRunner: {
+      /** Runner Id */
+      runner_id: string
+      /** Runner Name */
+      runner_name: string | null
+      /** Runner Owner */
+      runner_owner: string
+      /** Ip */
+      ip: string | null
+      /**
+       * Last Result
+       * @enum {string}
+       */
+      last_result: 'passed' | 'failed' | 'skipped' | 'blocked' | 'error'
+      /**
+       * Last Reported At
+       * Format: date-time
+       */
+      last_reported_at: string
+      /**
+       * Case Report Id
+       * Format: uuid
+       */
+      case_report_id: string
+      /** Case Id */
+      case_id: string
+      /** Case Name */
+      case_name: string
+    }
+    /** DashboardSummaryResponse */
+    DashboardSummaryResponse: {
+      /**
+       * Generated At
+       * Format: date-time
+       */
+      generated_at: string
+      /**
+       * Today Start
+       * Format: date-time
+       */
+      today_start: string
+      /**
+       * Today End
+       * Format: date-time
+       */
+      today_end: string
+      today: components['schemas']['DashboardTodaySummary']
+      /** Owner Summaries */
+      owner_summaries: components['schemas']['DashboardOwnerSummary'][]
+      /** Recent Runners */
+      recent_runners: components['schemas']['DashboardRecentRunner'][]
+      /** Recent Failures */
+      recent_failures: components['schemas']['DashboardRecentFailure'][]
+    }
+    /** DashboardTodaySummary */
+    DashboardTodaySummary: {
+      /** Total */
+      total: number
+      /** Passed */
+      passed: number
+      /** Failed */
+      failed: number
+      /** Pass Rate */
+      pass_rate: number | null
     }
     /** FailureCaseListItem */
     FailureCaseListItem: {
@@ -428,6 +565,26 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_dashboard_summary_api_v1_dashboard_summary_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['DashboardSummaryResponse']
         }
       }
     }

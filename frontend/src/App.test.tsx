@@ -42,7 +42,7 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: '首页看板' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('http://localhost:8000')).toBeInTheDocument()
+    expect(screen.getByText('加载首页看板')).toBeInTheDocument()
   })
 
   it('renders the case reports page at /case-reports', () => {
