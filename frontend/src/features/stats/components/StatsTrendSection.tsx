@@ -6,6 +6,7 @@ import {
   Line,
   ResponsiveContainer,
   Tooltip,
+  type TooltipContentProps,
   XAxis,
   YAxis,
 } from 'recharts'
@@ -25,6 +26,63 @@ type StatsTrendSectionProps = {
   items: StatsByDateItem[]
 }
 
+type TooltipValue = number | string | Array<number | string>
+
+const trendChartColors = {
+  total: '#0f172a',
+  failure: '#dc2626',
+  passRate: '#16a34a',
+  grid: 'var(--border)',
+  axis: 'var(--muted-foreground)',
+}
+
+function formatTooltipValue(dataKey: unknown, value: unknown): string {
+  if (typeof value !== 'number') {
+    return String(value ?? '-')
+  }
+
+  if (dataKey === 'passRatePercent') {
+    return `${value.toFixed(1)}%`
+  }
+
+  return formatCount(value)
+}
+
+function TrendTooltip({
+  active,
+  label,
+  payload,
+}: TooltipContentProps<TooltipValue, string>) {
+  if (!active || payload.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="rounded-lg border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
+      <div className="mb-2 font-medium">{label}</div>
+      <div className="flex flex-col gap-1">
+        {payload.map((entry) => (
+          <div
+            key={`${entry.dataKey ?? entry.name}`}
+            className="flex min-w-32 items-center justify-between gap-4"
+          >
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <span
+                className="size-2 rounded-full"
+                style={{ backgroundColor: entry.color ?? entry.fill }}
+              />
+              {entry.name}
+            </span>
+            <span className="font-medium">
+              {formatTooltipValue(entry.dataKey, entry.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function StatsTrendSection({ items }: StatsTrendSectionProps) {
   const chartItems = items.map((item) => ({
     ...item,
@@ -32,55 +90,93 @@ export function StatsTrendSection({ items }: StatsTrendSectionProps) {
   }))
 
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1">
+    <section className="rounded-lg border bg-card shadow-sm">
+      <div className="flex flex-col gap-1 border-b px-5 py-4">
         <h3 className="text-lg font-semibold tracking-normal">日期趋势</h3>
         <p className="text-muted-foreground text-sm">
           按日期展示报告总数、失败数和通过率。
         </p>
       </div>
 
-      <div className="rounded-lg border p-3">
-        <div className="h-72 w-full">
+      <div className="p-4">
+        <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={chartItems}
-              margin={{ top: 16, right: 24, bottom: 8, left: 0 }}
+              margin={{ top: 16, right: 24, bottom: 12, left: 8 }}
             >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis yAxisId="count" allowDecimals={false} />
+              <CartesianGrid
+                stroke={trendChartColors.grid}
+                strokeDasharray="4 4"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="date"
+                axisLine={false}
+                tickLine={false}
+                tickMargin={10}
+                minTickGap={24}
+                stroke={trendChartColors.axis}
+              />
+              <YAxis
+                yAxisId="count"
+                allowDecimals={false}
+                axisLine={false}
+                tickLine={false}
+                tickMargin={10}
+                width={48}
+                stroke={trendChartColors.axis}
+              />
               <YAxis
                 yAxisId="rate"
                 orientation="right"
                 domain={[0, 100]}
+                axisLine={false}
+                tickLine={false}
+                tickMargin={10}
+                width={48}
                 tickFormatter={(value) => `${value}%`}
+                stroke={trendChartColors.axis}
               />
-              <Tooltip />
-              <Legend />
-              <Bar yAxisId="count" dataKey="total" name="总数" fill="#2563eb" />
+              <Tooltip
+                content={<TrendTooltip />}
+                cursor={{ fill: 'var(--muted)' }}
+              />
+              <Legend iconType="circle" wrapperStyle={{ paddingTop: 12 }} />
+              <Bar
+                yAxisId="count"
+                dataKey="total"
+                name="总数"
+                fill={trendChartColors.total}
+                radius={[6, 6, 0, 0]}
+                barSize={24}
+              />
               <Bar
                 yAxisId="count"
                 dataKey="failureCount"
                 name="失败数"
-                fill="#dc2626"
+                fill={trendChartColors.failure}
+                radius={[6, 6, 0, 0]}
+                barSize={24}
               />
               <Line
                 yAxisId="rate"
                 type="monotone"
                 dataKey="passRatePercent"
                 name="通过率"
-                stroke="#16a34a"
-                strokeWidth={2}
+                stroke={trendChartColors.passRate}
+                strokeWidth={3}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
               />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="rounded-lg border">
+      <div className="border-t">
         <Table aria-label="日期趋势明细">
-          <TableHeader>
+          <TableHeader className="bg-muted/50">
             <TableRow>
               <TableHead>日期</TableHead>
               <TableHead>总数</TableHead>
@@ -97,12 +193,18 @@ export function StatsTrendSection({ items }: StatsTrendSectionProps) {
               <TableRow key={item.date}>
                 <TableCell className="font-medium">{item.date}</TableCell>
                 <TableCell>{formatCount(item.total)}</TableCell>
-                <TableCell>{formatCount(item.passed)}</TableCell>
-                <TableCell>{formatCount(item.failed)}</TableCell>
+                <TableCell className="font-medium text-emerald-700">
+                  {formatCount(item.passed)}
+                </TableCell>
+                <TableCell className="font-medium text-destructive">
+                  {formatCount(item.failed)}
+                </TableCell>
                 <TableCell>{formatCount(item.error)}</TableCell>
                 <TableCell>{formatCount(item.skipped)}</TableCell>
                 <TableCell>{formatCount(item.blocked)}</TableCell>
-                <TableCell>{formatPassRate(item.passRate)}</TableCell>
+                <TableCell className="font-medium">
+                  {formatPassRate(item.passRate)}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
