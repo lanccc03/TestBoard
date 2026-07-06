@@ -37,7 +37,7 @@ export function StatsFilters({
 
   return (
     <form
-      className="rounded-lg border bg-card/80 p-4 shadow-sm"
+      className="bg-card/80 rounded-lg border p-4 shadow-sm"
       onSubmit={handleSubmit}
     >
       <FieldGroup className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">

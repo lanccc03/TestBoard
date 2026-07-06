@@ -202,7 +202,7 @@ export function StatsPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-5 rounded-lg bg-muted/40 p-5">
+      <div className="bg-muted/40 flex flex-col gap-5 rounded-lg p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -225,7 +225,7 @@ export function StatsPage() {
           </div>
 
           {byDateData ? (
-            <div className="rounded-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+            <div className="bg-muted/50 text-muted-foreground rounded-lg border px-3 py-2 text-sm">
               统计窗口：{formatDateTime(byDateData.range.startedAtFrom)} 至{' '}
               {formatDateTime(byDateData.range.startedAtTo)}
             </div>
