@@ -59,7 +59,7 @@ function TrendTooltip({
   }
 
   return (
-    <div className="rounded-lg border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
+    <div className="bg-popover text-popover-foreground rounded-lg border px-3 py-2 text-sm shadow-md">
       <div className="mb-2 font-medium">{label}</div>
       <div className="flex flex-col gap-1">
         {payload.map((entry) => (
@@ -67,7 +67,7 @@ function TrendTooltip({
             key={`${entry.dataKey ?? entry.name}`}
             className="flex min-w-32 items-center justify-between gap-4"
           >
-            <span className="flex items-center gap-2 text-muted-foreground">
+            <span className="text-muted-foreground flex items-center gap-2">
               <span
                 className="size-2 rounded-full"
                 style={{ backgroundColor: entry.color ?? entry.fill }}
@@ -91,7 +91,7 @@ export function StatsTrendSection({ items }: StatsTrendSectionProps) {
   }))
 
   return (
-    <section className="rounded-lg border bg-card shadow-sm">
+    <section className="bg-card rounded-lg border shadow-sm">
       <div className="flex flex-col gap-1 border-b px-5 py-4">
         <h3 className="text-lg font-semibold tracking-normal">日期趋势</h3>
         <p className="text-muted-foreground text-sm">
@@ -197,7 +197,7 @@ export function StatsTrendSection({ items }: StatsTrendSectionProps) {
                 <TableCell className="font-medium text-emerald-700">
                   {formatCount(item.passed)}
                 </TableCell>
-                <TableCell className="font-medium text-destructive">
+                <TableCell className="text-destructive font-medium">
                   {formatCount(item.failed)}
                 </TableCell>
                 <TableCell>{formatCount(item.error)}</TableCell>
