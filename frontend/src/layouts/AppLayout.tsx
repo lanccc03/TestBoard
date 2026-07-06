@@ -7,6 +7,7 @@ const navigationItems = [
   { label: '首页', to: '/', end: true },
   { label: '用例报告', to: '/case-reports', end: false },
   { label: '失败用例', to: '/failures', end: false },
+  { label: '统计趋势', to: '/stats', end: false },
 ]
 
 export function AppLayout() {

@@ -1,8 +1,9 @@
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import cast
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import case, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.runner import Runner
@@ -15,6 +16,7 @@ from app.schemas.dashboard import (
     DashboardTodaySummary,
 )
 from app.schemas.test_report import CaseResult
+from app.services.stats_summary import ResultCounts, count_results
 
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 FAILURE_RESULTS = ("failed", "error")
@@ -60,23 +62,17 @@ class DashboardSummaryService:
         today_start: datetime,
         today_end: datetime,
     ) -> DashboardTodaySummary:
-        total_expression = func.count(TestCaseReport.case_report_id)
-        passed_expression = func.sum(case((TestCaseReport.result == "passed", 1), else_=0))
-        failed_expression = func.sum(case((TestCaseReport.result.in_(FAILURE_RESULTS), 1), else_=0))
-        statement = select(total_expression, passed_expression, failed_expression).where(
+        statement = select(TestCaseReport).where(
             TestCaseReport.started_at >= today_start,
             TestCaseReport.started_at < today_end,
         )
-        total, passed, failed = self._session.execute(statement).one()
-        total_count = int(total or 0)
-        passed_count = int(passed or 0)
-        failed_count = int(failed or 0)
+        counts = count_results(list(self._session.scalars(statement).all()))
 
         return DashboardTodaySummary(
-            total=total_count,
-            passed=passed_count,
-            failed=failed_count,
-            pass_rate=_pass_rate(passed_count, total_count),
+            total=counts.total,
+            passed=counts.passed,
+            failed=counts.failure_count,
+            pass_rate=counts.pass_rate,
         )
 
     def _get_owner_summaries(
@@ -85,41 +81,26 @@ class DashboardSummaryService:
         today_start: datetime,
         today_end: datetime,
     ) -> list[DashboardOwnerSummary]:
-        total_expression = func.count(TestCaseReport.case_report_id).label("total")
-        passed_expression = func.sum(case((TestCaseReport.result == "passed", 1), else_=0)).label(
-            "passed"
+        statement = select(TestCaseReport).where(
+            TestCaseReport.started_at >= today_start,
+            TestCaseReport.started_at < today_end,
         )
-        failed_expression = func.sum(
-            case((TestCaseReport.result.in_(FAILURE_RESULTS), 1), else_=0)
-        ).label("failed")
-        statement = (
-            select(
-                TestCaseReport.runner_owner,
-                total_expression,
-                passed_expression,
-                failed_expression,
-            )
-            .where(
-                TestCaseReport.started_at >= today_start,
-                TestCaseReport.started_at < today_end,
-            )
-            .group_by(TestCaseReport.runner_owner)
-            .order_by(total_expression.desc(), TestCaseReport.runner_owner.asc())
-            .limit(DASHBOARD_LIMIT)
-        )
+        grouped: defaultdict[str, ResultCounts] = defaultdict(ResultCounts)
+        for report in self._session.scalars(statement).all():
+            grouped[report.runner_owner].add_result(report.result)
 
         summaries: list[DashboardOwnerSummary] = []
-        for runner_owner, total, passed, failed in self._session.execute(statement).all():
-            total_count = int(total or 0)
-            passed_count = int(passed or 0)
-            failed_count = int(failed or 0)
+        top_groups = sorted(grouped.items(), key=lambda item: (-item[1].total, item[0]))[
+            :DASHBOARD_LIMIT
+        ]
+        for runner_owner, counts in top_groups:
             summaries.append(
                 DashboardOwnerSummary(
                     runner_owner=runner_owner,
-                    total=total_count,
-                    passed=passed_count,
-                    failed=failed_count,
-                    pass_rate=_pass_rate(passed_count, total_count),
+                    total=counts.total,
+                    passed=counts.passed,
+                    failed=counts.failure_count,
+                    pass_rate=counts.pass_rate,
                 )
             )
 

@@ -34,6 +34,10 @@ describe('App', () => {
       'href',
       '/failures',
     )
+    expect(screen.getByRole('link', { name: '统计趋势' })).toHaveAttribute(
+      'href',
+      '/stats',
+    )
   })
 
   it('renders the dashboard placeholder at /', () => {
@@ -71,5 +75,14 @@ describe('App', () => {
     ).toBeInTheDocument()
     expect(screen.getByText(/筛选失败或异常用例/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '筛选' })).toBeInTheDocument()
+  })
+
+  it('renders the stats page at /stats', () => {
+    renderAppAt('/stats')
+
+    expect(
+      screen.getByRole('heading', { name: '统计趋势' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('加载统计数据')).toBeInTheDocument()
   })
 })

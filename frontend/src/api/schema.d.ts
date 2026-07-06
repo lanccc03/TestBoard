@@ -89,6 +89,74 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/stats/by-date': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Stats By Date */
+    get: operations['get_stats_by_date_api_v1_stats_by_date_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/stats/by-owner': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Stats By Owner */
+    get: operations['get_stats_by_owner_api_v1_stats_by_owner_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/stats/by-runner': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Stats By Runner */
+    get: operations['get_stats_by_runner_api_v1_stats_by_runner_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/stats/by-case': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Stats By Case */
+    get: operations['get_stats_by_case_api_v1_stats_by_case_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/api/v1/test-reports': {
     parameters: {
       query?: never
@@ -429,6 +497,158 @@ export interface components {
       /** Detail */
       detail?: components['schemas']['ValidationError'][]
     }
+    /** StatsByCaseItem */
+    StatsByCaseItem: {
+      /** Total */
+      total: number
+      /** Passed */
+      passed: number
+      /** Failed */
+      failed: number
+      /** Error */
+      error: number
+      /** Skipped */
+      skipped: number
+      /** Blocked */
+      blocked: number
+      /** Failure Count */
+      failure_count: number
+      /** Pass Rate */
+      pass_rate: number | null
+      /** Case Id */
+      case_id: string
+      /** Case Name */
+      case_name: string
+      /** Module */
+      module: string | null
+    }
+    /** StatsByCaseResponse */
+    StatsByCaseResponse: {
+      /**
+       * Generated At
+       * Format: date-time
+       */
+      generated_at: string
+      range: components['schemas']['StatsRange']
+      /** Items */
+      items: components['schemas']['StatsByCaseItem'][]
+    }
+    /** StatsByDateItem */
+    StatsByDateItem: {
+      /** Total */
+      total: number
+      /** Passed */
+      passed: number
+      /** Failed */
+      failed: number
+      /** Error */
+      error: number
+      /** Skipped */
+      skipped: number
+      /** Blocked */
+      blocked: number
+      /** Failure Count */
+      failure_count: number
+      /** Pass Rate */
+      pass_rate: number | null
+      /**
+       * Date
+       * Format: date
+       */
+      date: string
+    }
+    /** StatsByDateResponse */
+    StatsByDateResponse: {
+      /**
+       * Generated At
+       * Format: date-time
+       */
+      generated_at: string
+      range: components['schemas']['StatsRange']
+      /** Items */
+      items: components['schemas']['StatsByDateItem'][]
+    }
+    /** StatsByOwnerItem */
+    StatsByOwnerItem: {
+      /** Total */
+      total: number
+      /** Passed */
+      passed: number
+      /** Failed */
+      failed: number
+      /** Error */
+      error: number
+      /** Skipped */
+      skipped: number
+      /** Blocked */
+      blocked: number
+      /** Failure Count */
+      failure_count: number
+      /** Pass Rate */
+      pass_rate: number | null
+      /** Runner Owner */
+      runner_owner: string
+    }
+    /** StatsByOwnerResponse */
+    StatsByOwnerResponse: {
+      /**
+       * Generated At
+       * Format: date-time
+       */
+      generated_at: string
+      range: components['schemas']['StatsRange']
+      /** Items */
+      items: components['schemas']['StatsByOwnerItem'][]
+    }
+    /** StatsByRunnerItem */
+    StatsByRunnerItem: {
+      /** Total */
+      total: number
+      /** Passed */
+      passed: number
+      /** Failed */
+      failed: number
+      /** Error */
+      error: number
+      /** Skipped */
+      skipped: number
+      /** Blocked */
+      blocked: number
+      /** Failure Count */
+      failure_count: number
+      /** Pass Rate */
+      pass_rate: number | null
+      /** Runner Id */
+      runner_id: string
+      /** Runner Name */
+      runner_name: string | null
+      /** Runner Owner */
+      runner_owner: string
+    }
+    /** StatsByRunnerResponse */
+    StatsByRunnerResponse: {
+      /**
+       * Generated At
+       * Format: date-time
+       */
+      generated_at: string
+      range: components['schemas']['StatsRange']
+      /** Items */
+      items: components['schemas']['StatsByRunnerItem'][]
+    }
+    /** StatsRange */
+    StatsRange: {
+      /**
+       * Started At From
+       * Format: date-time
+       */
+      started_at_from: string
+      /**
+       * Started At To
+       * Format: date-time
+       */
+      started_at_to: string
+    }
     /** TestReportResponse */
     TestReportResponse: {
       /**
@@ -614,6 +834,137 @@ export interface operations {
         }
         content: {
           'application/json': components['schemas']['FailureCaseListResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_stats_by_date_api_v1_stats_by_date_get: {
+    parameters: {
+      query?: {
+        started_at_from?: string | null
+        started_at_to?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StatsByDateResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_stats_by_owner_api_v1_stats_by_owner_get: {
+    parameters: {
+      query?: {
+        started_at_from?: string | null
+        started_at_to?: string | null
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StatsByOwnerResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_stats_by_runner_api_v1_stats_by_runner_get: {
+    parameters: {
+      query?: {
+        started_at_from?: string | null
+        started_at_to?: string | null
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StatsByRunnerResponse']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_stats_by_case_api_v1_stats_by_case_get: {
+    parameters: {
+      query?: {
+        started_at_from?: string | null
+        started_at_to?: string | null
+        limit?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['StatsByCaseResponse']
         }
       }
       /** @description Validation Error */

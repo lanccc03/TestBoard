@@ -5,6 +5,7 @@ import { CaseReportDetailPage } from '@/pages/caseReports/CaseReportDetailPage'
 import { CaseReportsPage } from '@/pages/caseReports/CaseReportsPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { FailuresPage } from '@/pages/FailuresPage'
+import { StatsPage } from '@/pages/StatsPage'
 
 export function AppRoutes() {
   return (
@@ -17,6 +18,7 @@ export function AppRoutes() {
           element={<CaseReportDetailPage />}
         />
         <Route path="failures" element={<FailuresPage />} />
+        <Route path="stats" element={<StatsPage />} />
       </Route>
     </Routes>
   )

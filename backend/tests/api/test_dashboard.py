@@ -177,6 +177,30 @@ def _seed_dashboard_reports(session: Session) -> None:
     )
     _seed_case_report(
         session,
+        case_report_id="aaaaaaaa-0000-0000-0000-000000000006",
+        idempotency_key="today-blocked-alice",
+        runner_id="runner-c",
+        runner_owner="alice",
+        case_id="CASE-5",
+        case_name="Search dependency unavailable",
+        module="search",
+        started_at=today_start + timedelta(hours=4),
+        result="blocked",
+    )
+    _seed_case_report(
+        session,
+        case_report_id="aaaaaaaa-0000-0000-0000-000000000007",
+        idempotency_key="today-skipped-bob",
+        runner_id="runner-b",
+        runner_owner="bob",
+        case_id="CASE-6",
+        case_name="Checkout optional flow",
+        module="checkout",
+        started_at=today_start + timedelta(hours=5),
+        result="skipped",
+    )
+    _seed_case_report(
+        session,
         case_report_id="aaaaaaaa-0000-0000-0000-000000000005",
         idempotency_key="tomorrow-skipped",
         runner_id="runner-b",
@@ -206,7 +230,7 @@ async def test_dashboard_summary_returns_today_metrics_and_aggregations(
     assert response_json["today_end"].startswith((today_start + timedelta(days=1)).isoformat())
     assert response_json["generated_at"]
     assert response_json["today"] == {
-        "total": 3,
+        "total": 5,
         "passed": 1,
         "failed": 2,
         "pass_rate": pytest.approx(1 / 3),
@@ -214,14 +238,14 @@ async def test_dashboard_summary_returns_today_metrics_and_aggregations(
     assert response_json["owner_summaries"] == [
         {
             "runner_owner": "alice",
-            "total": 2,
+            "total": 3,
             "passed": 1,
             "failed": 1,
             "pass_rate": 0.5,
         },
         {
             "runner_owner": "bob",
-            "total": 1,
+            "total": 2,
             "passed": 0,
             "failed": 1,
             "pass_rate": 0.0,
@@ -232,7 +256,7 @@ async def test_dashboard_summary_returns_today_metrics_and_aggregations(
         for item in response_json["recent_runners"]
     ] == [
         ("runner-b", "bob", "skipped"),
-        ("runner-c", "alice", "error"),
+        ("runner-c", "alice", "blocked"),
         ("runner-a", "alice", "passed"),
     ]
     assert response_json["recent_runners"][0]["last_reported_at"].startswith(
