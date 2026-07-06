@@ -246,6 +246,15 @@ describe('StatsPage', () => {
     expect(
       screen.getByRole('heading', { name: '统计趋势' }),
     ).toBeInTheDocument()
+    const summary = screen.getByLabelText('统计概览')
+    expect(within(summary).getByText('报告总数')).toBeInTheDocument()
+    expect(within(summary).getByText('3 条')).toBeInTheDocument()
+    expect(within(summary).getByText('失败风险')).toBeInTheDocument()
+    expect(within(summary).getByText('2 条')).toBeInTheDocument()
+    expect(within(summary).getByText('通过率')).toBeInTheDocument()
+    expect(within(summary).getByText('33.3%')).toBeInTheDocument()
+    expect(within(summary).getByText('阻塞 / 异常')).toBeInTheDocument()
+    expect(within(summary).getByText('1 条')).toBeInTheDocument()
     expect(screen.getAllByTestId('chart')).toHaveLength(4)
     expect(screen.getByText('2026-07-05')).toBeInTheDocument()
     expect(screen.getAllByText('alice').length).toBeGreaterThan(0)
