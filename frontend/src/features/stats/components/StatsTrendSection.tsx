@@ -27,6 +27,7 @@ type StatsTrendSectionProps = {
 }
 
 type TooltipValue = number | string | Array<number | string>
+type TooltipName = number | string
 
 const trendChartColors = {
   total: '#0f172a',
@@ -52,7 +53,7 @@ function TrendTooltip({
   active,
   label,
   payload,
-}: TooltipContentProps<TooltipValue, string>) {
+}: TooltipContentProps<TooltipValue, TooltipName>) {
   if (!active || payload.length === 0) {
     return null
   }
@@ -139,7 +140,7 @@ export function StatsTrendSection({ items }: StatsTrendSectionProps) {
                 stroke={trendChartColors.axis}
               />
               <Tooltip
-                content={<TrendTooltip />}
+                content={(props) => <TrendTooltip {...props} />}
                 cursor={{ fill: 'var(--muted)' }}
               />
               <Legend iconType="circle" wrapperStyle={{ paddingTop: 12 }} />
