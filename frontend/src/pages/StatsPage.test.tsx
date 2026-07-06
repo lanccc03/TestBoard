@@ -267,6 +267,39 @@ describe('StatsPage', () => {
     expect(within(ownerRow).getByText('2 条')).toBeInTheDocument()
   })
 
+  it('excludes skipped and blocked outcomes from summary pass rate', () => {
+    mockStats({
+      byDate: {
+        data: byDateResponse({
+          items: [
+            {
+              date: '2026-07-05',
+              ...statsCounts,
+              total: 5,
+              passed: 1,
+              failed: 1,
+              error: 0,
+              skipped: 2,
+              blocked: 1,
+              failureCount: 1,
+              passRate: 0.2,
+            },
+          ],
+        }),
+        error: null,
+        isError: false,
+        isPending: false,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof useStats>['byDate'],
+    })
+
+    renderStatsPage()
+
+    const summary = screen.getByLabelText('统计概览')
+    expect(within(summary).getByText('通过率')).toBeInTheDocument()
+    expect(within(summary).getByText('50.0%')).toBeInTheDocument()
+  })
+
   it('submits and resets the time range filters', () => {
     mockStats()
     renderStatsPage()

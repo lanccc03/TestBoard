@@ -70,22 +70,27 @@ function buildStatsSummary(items: StatsByDateItem[]): StatsSummary {
     (accumulator, item) => ({
       totalReports: accumulator.totalReports + item.total,
       passed: accumulator.passed + item.passed,
+      failed: accumulator.failed + item.failed,
+      error: accumulator.error + item.error,
       failureCount: accumulator.failureCount + item.failureCount,
       blockedAndError: accumulator.blockedAndError + item.blocked + item.error,
     }),
     {
       totalReports: 0,
       passed: 0,
+      failed: 0,
+      error: 0,
       failureCount: 0,
       blockedAndError: 0,
     },
   )
+  const passRateDenominator = totals.passed + totals.failed + totals.error
 
   return {
     totalReports: totals.totalReports,
     failureCount: totals.failureCount,
     passRate:
-      totals.totalReports === 0 ? null : totals.passed / totals.totalReports,
+      passRateDenominator === 0 ? null : totals.passed / passRateDenominator,
     blockedAndError: totals.blockedAndError,
   }
 }
@@ -197,7 +202,7 @@ export function StatsPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="rounded-lg border bg-card p-5 shadow-sm">
+      <div className="flex flex-col gap-5 rounded-lg bg-muted/40 p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -230,7 +235,7 @@ export function StatsPage() {
         {summary ? (
           <section
             aria-label="统计概览"
-            className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
           >
             <SummaryMetricCard
               label="报告总数"
@@ -249,7 +254,7 @@ export function StatsPage() {
             <SummaryMetricCard
               label="通过率"
               value={formatPassRate(summary.passRate)}
-              description="按报告总数加权计算"
+              description="按通过、失败、错误结果计算"
               tone={
                 summary.passRate !== null && summary.passRate >= 0.8
                   ? 'success'
