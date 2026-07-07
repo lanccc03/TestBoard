@@ -189,7 +189,16 @@ export function StatsPage() {
     byOwnerData?.items.length === 0 &&
     byRunnerData?.items.length === 0 &&
     byCaseData?.items.length === 0
-  const summary = byDateData ? buildStatsSummary(byDateData.items) : null
+  const hasCompleteStatsData =
+    !isPending &&
+    !errorQuery &&
+    byDateData !== undefined &&
+    byOwnerData !== undefined &&
+    byRunnerData !== undefined &&
+    byCaseData !== undefined
+  const summary = hasCompleteStatsData
+    ? buildStatsSummary(byDateData.items)
+    : null
 
   function submitFilters() {
     setQuery(toStatsQuery(filters))
@@ -224,7 +233,7 @@ export function StatsPage() {
             </p>
           </div>
 
-          {byDateData ? (
+          {hasCompleteStatsData ? (
             <div className="bg-muted/50 text-muted-foreground rounded-lg border px-3 py-2 text-sm">
               统计窗口：{formatDateTime(byDateData.range.startedAtFrom)} 至{' '}
               {formatDateTime(byDateData.range.startedAtTo)}

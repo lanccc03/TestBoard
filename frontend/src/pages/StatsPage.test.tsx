@@ -300,6 +300,24 @@ describe('StatsPage', () => {
     expect(within(summary).getByText('50.0%')).toBeInTheDocument()
   })
 
+  it('hides summary metrics when any stats query fails', () => {
+    mockStats({
+      byOwner: {
+        data: undefined,
+        error: new Error('Owner stats failed'),
+        isError: true,
+        isPending: false,
+        refetch: vi.fn(),
+      } as unknown as ReturnType<typeof useStats>['byOwner'],
+    })
+
+    renderStatsPage()
+
+    expect(screen.getByText('Owner stats failed')).toBeInTheDocument()
+    expect(screen.queryByLabelText('统计概览')).not.toBeInTheDocument()
+    expect(screen.queryByText(/统计窗口：/)).not.toBeInTheDocument()
+  })
+
   it('submits and resets the time range filters', () => {
     mockStats()
     renderStatsPage()

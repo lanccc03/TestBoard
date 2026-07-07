@@ -136,22 +136,28 @@ function buildStatsSummary(items: StatsByDateItem[]): StatsSummary {
     (accumulator, item) => ({
       totalReports: accumulator.totalReports + item.total,
       passed: accumulator.passed + item.passed,
+      failed: accumulator.failed + item.failed,
+      error: accumulator.error + item.error,
       failureCount: accumulator.failureCount + item.failureCount,
       blockedAndError: accumulator.blockedAndError + item.blocked + item.error,
     }),
     {
       totalReports: 0,
       passed: 0,
+      failed: 0,
+      error: 0,
       failureCount: 0,
       blockedAndError: 0,
     },
   )
 
+  const passRateDenominator = totals.passed + totals.failed + totals.error
+
   return {
     totalReports: totals.totalReports,
     failureCount: totals.failureCount,
     passRate:
-      totals.totalReports === 0 ? null : totals.passed / totals.totalReports,
+      passRateDenominator === 0 ? null : totals.passed / passRateDenominator,
     blockedAndError: totals.blockedAndError,
   }
 }

@@ -96,8 +96,10 @@ No API or hook changes are required.
 
 - `totalReports`: sum of `total`.
 - `failureCount`: sum of `failureCount`.
-- `passRate`: weighted pass rate from summed `passed / total`, with no value when
-  the total is zero.
+- `passRate`: weighted pass rate from summed `passed / (passed + failed +
+  error)`, with no value when there are no eligible completed outcomes. This
+  matches the existing stats API semantics and excludes skipped/blocked reports
+  from the pass-rate denominator.
 - `blockedAndError`: sum of `blocked + error`.
 
 These derived values are display-only and should not affect empty-state detection
