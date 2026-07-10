@@ -119,7 +119,11 @@ describe('CaseReportDetailPage', () => {
       screen.getByRole('heading', { name: 'Checkout applies coupon' }),
     ).toBeInTheDocument()
     expect(screen.getByText('CASE-2')).toBeInTheDocument()
-    expect(screen.getByText('失败')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '用例信息' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '执行机' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '错误信息' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: '报告文件' })).toBeInTheDocument()
+    expect(screen.getByText('失败')).toHaveAttribute('data-result', 'failed')
     expect(screen.getByText('checkout')).toBeInTheDocument()
     expect(screen.getByText('runner-b')).toBeInTheDocument()
     expect(screen.getByText('Runner B')).toBeInTheDocument()

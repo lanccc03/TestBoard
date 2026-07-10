@@ -1,7 +1,9 @@
 import { ArrowLeftIcon, ExternalLinkIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
+import type { CaseReportDetail } from '@/api/caseReports'
+import { DataPanel } from '@/components/data-panel'
+import { PageHeader } from '@/components/page-header'
 import {
   EmptyState,
   ErrorState,
@@ -15,6 +17,7 @@ import {
   formatDuration,
 } from '@/features/caseReports/lib/formatters'
 import { useCaseReportDetail } from '@/hooks/useCaseReportDetail'
+import { cn } from '@/lib/utils'
 
 function formatFileSize(sizeBytes: number): string {
   if (sizeBytes < 1024) {
@@ -52,19 +55,13 @@ function DetailField({ label, value, mono = false }: DetailFieldProps) {
   )
 }
 
-type DetailSectionProps = {
-  title: string
-  children: ReactNode
-}
-
-function DetailSection({ title, children }: DetailSectionProps) {
-  return (
-    <section className="flex flex-col gap-4 rounded-lg border p-5">
-      <h3 className="text-base font-semibold tracking-normal">{title}</h3>
-      {children}
-    </section>
-  )
-}
+const resultAccentClasses = {
+  passed: 'border-l-success',
+  failed: 'border-l-destructive',
+  skipped: 'border-l-muted-foreground',
+  blocked: 'border-l-warning',
+  error: 'border-l-error',
+} satisfies Record<CaseReportDetail['result'], string>
 
 export function CaseReportDetailPage() {
   const { caseReportId } = useParams()
@@ -117,34 +114,36 @@ export function CaseReportDetailPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 flex-col gap-2">
-          <Button asChild variant="outline" className="mb-2 w-fit">
-            <Link to="/case-reports">
-              <ArrowLeftIcon data-icon="inline-start" />
-              返回用例报告
-            </Link>
-          </Button>
-          <div className="flex flex-wrap items-center gap-3">
-            <h2 className="text-2xl font-semibold tracking-normal">
-              {detail.caseName}
-            </h2>
-            <CaseResultBadge result={detail.result} />
-          </div>
-          <p className="text-muted-foreground font-mono text-sm">
-            {detail.caseId}
-          </p>
-        </div>
-
-        <Button asChild className="w-fit">
-          <a href={detail.reportUrl} target="_blank" rel="noreferrer">
-            打开报告
-            <ExternalLinkIcon data-icon="inline-end" />
-          </a>
-        </Button>
+      <div
+        className={cn(
+          'bg-card rounded-xl border border-l-4 p-5 shadow-sm',
+          resultAccentClasses[detail.result],
+        )}
+      >
+        <PageHeader
+          eyebrow={
+            <Button asChild variant="ghost" size="sm" className="-ml-2 w-fit">
+              <Link to="/case-reports">
+                <ArrowLeftIcon data-icon="inline-start" />
+                返回用例报告
+              </Link>
+            </Button>
+          }
+          title={detail.caseName}
+          description={detail.caseId}
+          status={<CaseResultBadge result={detail.result} />}
+          action={
+            <Button asChild>
+              <a href={detail.reportUrl} target="_blank" rel="noreferrer">
+                打开报告
+                <ExternalLinkIcon data-icon="inline-end" />
+              </a>
+            </Button>
+          }
+        />
       </div>
 
-      <DetailSection title="用例信息">
+      <DataPanel title="用例信息">
         <dl className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <DetailField label="模块" value={detail.module ?? '-'} />
           <DetailField label="Owner 快照" value={detail.runnerOwner} />
@@ -163,18 +162,25 @@ export function CaseReportDetailPage() {
           />
           <DetailField label="报告 ID" value={detail.caseReportId} mono />
         </dl>
-      </DetailSection>
+      </DataPanel>
 
-      <DetailSection title="执行机">
+      <DataPanel title="执行机">
         <dl className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <DetailField label="执行机 ID" value={detail.runner.runnerId} mono />
           <DetailField label="名称" value={detail.runner.runnerName ?? '-'} />
           <DetailField label="Owner" value={detail.runner.runnerOwner} />
           <DetailField label="IP" value={detail.runner.ip ?? '-'} mono />
         </dl>
-      </DetailSection>
+      </DataPanel>
 
-      <DetailSection title="错误信息">
+      <DataPanel
+        title="错误信息"
+        className={
+          detail.errorType || detail.errorMessage
+            ? 'border-destructive/30'
+            : undefined
+        }
+      >
         {detail.errorType || detail.errorMessage ? (
           <div className="flex flex-col gap-3">
             {detail.errorType ? (
@@ -191,9 +197,9 @@ export function CaseReportDetailPage() {
         ) : (
           <p className="text-muted-foreground text-sm">-</p>
         )}
-      </DetailSection>
+      </DataPanel>
 
-      <DetailSection title="报告文件">
+      <DataPanel title="报告文件">
         <dl className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <DetailField label="文件名" value={detail.reportFilename} />
           <DetailField label="MIME" value={detail.reportContentType} />
@@ -203,7 +209,7 @@ export function CaseReportDetailPage() {
           />
           <DetailField label="访问入口" value={detail.reportUrl} mono />
         </dl>
-      </DetailSection>
+      </DataPanel>
     </section>
   )
 }
