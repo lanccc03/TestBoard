@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
@@ -16,28 +16,27 @@ function renderAppAt(path: string) {
 }
 
 describe('App', () => {
-  it('renders the application shell navigation', () => {
-    renderAppAt('/')
+  it('renders the desktop sidebar and marks the active route', () => {
+    renderAppAt('/case-reports')
 
     expect(
       screen.getByRole('heading', { name: 'TestBoard' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '首页' })).toHaveAttribute(
-      'href',
-      '/',
-    )
-    expect(screen.getByRole('link', { name: '用例报告' })).toHaveAttribute(
-      'href',
-      '/case-reports',
-    )
-    expect(screen.getByRole('link', { name: '失败用例' })).toHaveAttribute(
-      'href',
-      '/failures',
-    )
-    expect(screen.getByRole('link', { name: '统计趋势' })).toHaveAttribute(
-      'href',
-      '/stats',
-    )
+    expect(screen.getByText('公司内网测试结果平台')).toBeInTheDocument()
+
+    const navigation = screen.getByRole('navigation', { name: '主导航' })
+    expect(
+      within(navigation).getByRole('link', { name: '首页' }),
+    ).toHaveAttribute('href', '/')
+    expect(
+      within(navigation).getByRole('link', { name: '用例报告' }),
+    ).toHaveAttribute('aria-current', 'page')
+    expect(
+      within(navigation).getByRole('link', { name: '失败用例' }),
+    ).toHaveAttribute('href', '/failures')
+    expect(
+      within(navigation).getByRole('link', { name: '统计趋势' }),
+    ).toHaveAttribute('href', '/stats')
   })
 
   it('renders the dashboard placeholder at /', () => {
