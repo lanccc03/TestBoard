@@ -30,19 +30,22 @@ export function LoadingState({
   description,
 }: LoadingStateProps) {
   return (
-    <div className="flex flex-col gap-4 rounded-lg border p-5">
+    <div className="bg-card flex flex-col gap-5 rounded-xl border p-6 shadow-sm">
       <div className="flex items-center gap-3">
-        <Spinner />
+        <div className="bg-primary/10 text-primary flex size-9 items-center justify-center rounded-lg">
+          <Spinner />
+        </div>
         <div className="flex flex-col gap-1">
-          <p className="text-sm font-medium">{title}</p>
+          <p className="text-sm font-semibold">{title}</p>
           {description ? (
             <p className="text-muted-foreground text-sm">{description}</p>
           ) : null}
         </div>
       </div>
-      <div className="grid gap-2">
+      <div className="grid gap-3">
         <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-2/3" />
       </div>
     </div>
   )
@@ -56,7 +59,7 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, action }: EmptyStateProps) {
   return (
-    <Empty className="border">
+    <Empty className="bg-card min-h-64 border border-dashed shadow-sm">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <InboxIcon aria-hidden="true" />
@@ -81,7 +84,10 @@ export function ErrorState({
   retry,
 }: ErrorStateProps) {
   return (
-    <Alert variant="destructive">
+    <Alert
+      variant="destructive"
+      className="bg-card border-l-destructive border-l-4 px-4 py-3 shadow-sm"
+    >
       <AlertCircleIcon aria-hidden="true" />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>{getApiErrorMessage(error)}</AlertDescription>

@@ -10,6 +10,7 @@ describe('request state components', () => {
     expect(screen.getByRole('status', { name: 'Loading' })).toBeInTheDocument()
     expect(screen.getByText('加载用例报告')).toBeInTheDocument()
     expect(screen.getByText('正在请求数据')).toBeInTheDocument()
+    expect(document.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(3)
   })
 
   it('renders an empty state with an optional action', () => {
