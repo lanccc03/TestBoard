@@ -1,11 +1,14 @@
 import { useState } from 'react'
 
 import type { FailureCasesQuery } from '@/api/failureCases'
+import { DataPanel } from '@/components/data-panel'
+import { PageHeader } from '@/components/page-header'
 import {
   EmptyState,
   ErrorState,
   LoadingState,
 } from '@/components/request-state'
+import { Button } from '@/components/ui/button'
 import { CaseReportsPagination } from '@/features/caseReports/components/CaseReportsPagination'
 import {
   FailureCasesFilters,
@@ -78,12 +81,11 @@ export function FailuresPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold tracking-normal">失败用例</h2>
-        <p className="text-muted-foreground text-sm">
-          按时间、owner、执行机、模块和用例 ID 筛选失败或异常用例。
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="故障排查"
+        title="失败用例"
+        description="按时间、owner、执行机、模块和用例 ID 筛选失败或异常用例。"
+      />
 
       <FailureCasesFilters
         filters={draftFilters}
@@ -108,17 +110,30 @@ export function FailuresPage() {
         <EmptyState
           title="暂无失败用例"
           description="调整筛选条件或等待新的失败用例上报。"
+          action={
+            <Button variant="outline" onClick={handleResetFilters}>
+              重置筛选
+            </Button>
+          }
         />
       ) : (
-        <>
+        <DataPanel
+          title="失败记录"
+          description="聚焦失败与异常结果，快速进入报告和详情。"
+          meta={`${failureCasesData.total} 条`}
+          contentClassName="p-0"
+          className="border-destructive/20"
+        >
           <FailureCasesTable items={failureCasesData.items} />
-          <CaseReportsPagination
-            page={failureCasesData.page}
-            total={failureCasesData.total}
-            totalPages={failureCasesData.totalPages}
-            onPageChange={handlePageChange}
-          />
-        </>
+          <div className="border-t">
+            <CaseReportsPagination
+              page={failureCasesData.page}
+              total={failureCasesData.total}
+              totalPages={failureCasesData.totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </DataPanel>
       )}
     </section>
   )

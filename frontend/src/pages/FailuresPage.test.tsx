@@ -74,6 +74,7 @@ describe('FailuresPage', () => {
     expect(
       screen.getByText('调整筛选条件或等待新的失败用例上报。'),
     ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '重置筛选' })).toBeInTheDocument()
   })
 
   it('renders an error state with retry', () => {
@@ -118,6 +119,8 @@ describe('FailuresPage', () => {
 
     renderFailuresPage()
 
+    expect(screen.getByRole('region', { name: '失败记录' })).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: '失败用例' })).toBeInTheDocument()
     const failureRow = screen.getByRole('row', {
       name: /Search index refresh/,
     })

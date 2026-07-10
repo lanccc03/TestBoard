@@ -40,8 +40,11 @@ export function FailureCasesFilters({
   }
 
   return (
-    <form className="rounded-lg border p-4" onSubmit={handleSubmit}>
-      <FieldGroup className="grid gap-3 md:grid-cols-6">
+    <form
+      className="bg-card rounded-xl border p-5 shadow-sm"
+      onSubmit={handleSubmit}
+    >
+      <FieldGroup className="grid grid-cols-6 gap-3">
         <Field>
           <FieldLabel htmlFor="failure-started-at-from">开始时间</FieldLabel>
           <Input
@@ -104,7 +107,7 @@ export function FailureCasesFilters({
           />
         </Field>
 
-        <div className="flex items-end gap-2 md:col-span-6">
+        <div className="col-span-6 flex items-end justify-end gap-2">
           <Button type="submit">
             <SearchIcon data-icon="inline-start" />
             筛选
