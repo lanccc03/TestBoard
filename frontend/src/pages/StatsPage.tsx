@@ -4,10 +4,11 @@ import {
   BarChart3Icon,
   CircleAlertIcon,
   ShieldCheckIcon,
-  type LucideIcon,
 } from 'lucide-react'
 
 import type { StatsByDateItem, StatsQuery } from '@/api/stats'
+import { MetricCard } from '@/components/metric-card'
+import { PageHeader } from '@/components/page-header'
 import {
   EmptyState,
   ErrorState,
@@ -26,7 +27,6 @@ import { StatsTrendSection } from '@/features/stats/components/StatsTrendSection
 import { formatDateTime } from '@/features/caseReports/lib/formatters'
 import { formatCount, formatPassRate } from '@/features/stats/lib/formatters'
 import { useStats } from '@/hooks/useStats'
-import { cn } from '@/lib/utils'
 
 const DEFAULT_LIMIT = 10
 const EMPTY_FILTERS: StatsFilterDraft = {
@@ -39,30 +39,6 @@ type StatsSummary = {
   failureCount: number
   passRate: number | null
   blockedAndError: number
-}
-
-type SummaryTone = 'neutral' | 'success' | 'danger' | 'warning'
-
-type SummaryMetricCardProps = {
-  label: string
-  value: string
-  description: string
-  tone: SummaryTone
-  icon: LucideIcon
-}
-
-const summaryToneClasses: Record<SummaryTone, string> = {
-  neutral: 'border-l-foreground/60 bg-card',
-  success: 'border-l-emerald-500 bg-emerald-50/60',
-  danger: 'border-l-destructive bg-destructive/5',
-  warning: 'border-l-amber-500 bg-amber-50/70',
-}
-
-const summaryIconClasses: Record<SummaryTone, string> = {
-  neutral: 'bg-foreground/10 text-foreground',
-  success: 'bg-emerald-100 text-emerald-700',
-  danger: 'bg-destructive/10 text-destructive',
-  warning: 'bg-amber-100 text-amber-700',
 }
 
 function buildStatsSummary(items: StatsByDateItem[]): StatsSummary {
@@ -93,43 +69,6 @@ function buildStatsSummary(items: StatsByDateItem[]): StatsSummary {
       passRateDenominator === 0 ? null : totals.passed / passRateDenominator,
     blockedAndError: totals.blockedAndError,
   }
-}
-
-function SummaryMetricCard({
-  label,
-  value,
-  description,
-  tone,
-  icon: Icon,
-}: SummaryMetricCardProps) {
-  return (
-    <div
-      className={cn(
-        'flex min-h-28 flex-col justify-between rounded-lg border border-l-4 p-4 shadow-sm',
-        summaryToneClasses[tone],
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <span className="text-muted-foreground text-sm font-medium">
-            {label}
-          </span>
-          <span className="text-2xl font-semibold tracking-normal">
-            {value}
-          </span>
-        </div>
-        <div
-          className={cn(
-            'flex size-8 items-center justify-center rounded-lg',
-            summaryIconClasses[tone],
-          )}
-        >
-          <Icon className="size-4" aria-hidden="true" />
-        </div>
-      </div>
-      <p className="text-muted-foreground text-xs">{description}</p>
-    </div>
-  )
 }
 
 function toStatsQuery(filters: StatsFilterDraft): StatsQuery {
@@ -211,76 +150,64 @@ export function StatsPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="bg-muted/40 flex flex-col gap-5 rounded-lg p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-2xl font-semibold tracking-normal">
-                统计趋势
-              </h2>
-              {summary ? (
-                <Badge
-                  variant={
-                    summary.failureCount > 0 ? 'destructive' : 'secondary'
-                  }
-                >
-                  {summary.failureCount > 0 ? '存在失败' : '状态稳定'}
-                </Badge>
-              ) : null}
-            </div>
-            <p className="text-muted-foreground text-sm">
-              展示日期趋势，以及 owner、执行机、用例维度的 Top 10 对比。
-            </p>
-          </div>
-
-          {hasCompleteStatsData ? (
-            <div className="bg-muted/50 text-muted-foreground rounded-lg border px-3 py-2 text-sm">
+      <PageHeader
+        eyebrow="质量分析"
+        title="统计趋势"
+        description="展示日期趋势，以及 owner、执行机、用例维度的 Top 10 对比。"
+        status={
+          summary ? (
+            <Badge
+              variant={summary.failureCount > 0 ? 'destructive' : 'secondary'}
+            >
+              {summary.failureCount > 0 ? '存在失败' : '状态稳定'}
+            </Badge>
+          ) : undefined
+        }
+        meta={
+          hasCompleteStatsData ? (
+            <span>
               统计窗口：{formatDateTime(byDateData.range.startedAtFrom)} 至{' '}
               {formatDateTime(byDateData.range.startedAtTo)}
-            </div>
-          ) : null}
-        </div>
+            </span>
+          ) : undefined
+        }
+      />
 
-        {summary ? (
-          <section
-            aria-label="统计概览"
-            className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <SummaryMetricCard
-              label="报告总数"
-              value={formatCount(summary.totalReports)}
-              description="当前统计窗口内的报告量"
-              tone="neutral"
-              icon={BarChart3Icon}
-            />
-            <SummaryMetricCard
-              label="失败风险"
-              value={formatCount(summary.failureCount)}
-              description="失败、错误等未通过结果"
-              tone={summary.failureCount > 0 ? 'danger' : 'success'}
-              icon={CircleAlertIcon}
-            />
-            <SummaryMetricCard
-              label="通过率"
-              value={formatPassRate(summary.passRate)}
-              description="按通过、失败、错误结果计算"
-              tone={
-                summary.passRate !== null && summary.passRate >= 0.8
-                  ? 'success'
-                  : 'warning'
-              }
-              icon={ShieldCheckIcon}
-            />
-            <SummaryMetricCard
-              label="阻塞 / 异常"
-              value={formatCount(summary.blockedAndError)}
-              description="需要优先关注的执行中断"
-              tone={summary.blockedAndError > 0 ? 'warning' : 'success'}
-              icon={ActivityIcon}
-            />
-          </section>
-        ) : null}
-      </div>
+      {summary ? (
+        <section aria-label="统计概览" className="grid grid-cols-4 gap-4">
+          <MetricCard
+            label="报告总数"
+            value={formatCount(summary.totalReports)}
+            description="当前统计窗口内的报告量"
+            icon={BarChart3Icon}
+          />
+          <MetricCard
+            label="失败风险"
+            value={formatCount(summary.failureCount)}
+            description="失败、错误等未通过结果"
+            icon={CircleAlertIcon}
+            tone={summary.failureCount > 0 ? 'destructive' : 'success'}
+          />
+          <MetricCard
+            label="通过率"
+            value={formatPassRate(summary.passRate)}
+            description="按通过、失败、错误结果计算"
+            icon={ShieldCheckIcon}
+            tone={
+              summary.passRate !== null && summary.passRate >= 0.8
+                ? 'success'
+                : 'warning'
+            }
+          />
+          <MetricCard
+            label="阻塞 / 异常"
+            value={formatCount(summary.blockedAndError)}
+            description="需要优先关注的执行中断"
+            icon={ActivityIcon}
+            tone={summary.blockedAndError > 0 ? 'warning' : 'success'}
+          />
+        </section>
+      ) : null}
 
       <StatsFilters
         filters={filters}

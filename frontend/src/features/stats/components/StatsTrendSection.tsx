@@ -12,6 +12,7 @@ import {
 } from 'recharts'
 
 import type { StatsByDateItem } from '@/api/stats'
+import { DataPanel } from '@/components/data-panel'
 import {
   Table,
   TableBody,
@@ -30,9 +31,9 @@ type TooltipValue = number | string | Array<number | string>
 type TooltipName = number | string
 
 const trendChartColors = {
-  total: '#0f172a',
-  failure: '#dc2626',
-  passRate: '#16a34a',
+  total: 'var(--primary)',
+  failure: 'var(--destructive)',
+  passRate: 'var(--success)',
   grid: 'var(--border)',
   axis: 'var(--muted-foreground)',
 }
@@ -91,14 +92,11 @@ export function StatsTrendSection({ items }: StatsTrendSectionProps) {
   }))
 
   return (
-    <section className="bg-card rounded-lg border shadow-sm">
-      <div className="flex flex-col gap-1 border-b px-5 py-4">
-        <h3 className="text-lg font-semibold tracking-normal">日期趋势</h3>
-        <p className="text-muted-foreground text-sm">
-          按日期展示报告总数、失败数和通过率。
-        </p>
-      </div>
-
+    <DataPanel
+      title="日期趋势"
+      description="按日期展示报告总数、失败数和通过率。"
+      contentClassName="p-0"
+    >
       <div className="p-4">
         <div className="h-80 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -194,7 +192,7 @@ export function StatsTrendSection({ items }: StatsTrendSectionProps) {
               <TableRow key={item.date}>
                 <TableCell className="font-medium">{item.date}</TableCell>
                 <TableCell>{formatCount(item.total)}</TableCell>
-                <TableCell className="font-medium text-emerald-700">
+                <TableCell className="text-success font-medium">
                   {formatCount(item.passed)}
                 </TableCell>
                 <TableCell className="text-destructive font-medium">
@@ -211,6 +209,6 @@ export function StatsTrendSection({ items }: StatsTrendSectionProps) {
           </TableBody>
         </Table>
       </div>
-    </section>
+    </DataPanel>
   )
 }

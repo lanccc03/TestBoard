@@ -37,10 +37,10 @@ export function StatsFilters({
 
   return (
     <form
-      className="bg-card/80 rounded-lg border p-4 shadow-sm"
+      className="bg-card rounded-xl border p-5 shadow-sm"
       onSubmit={handleSubmit}
     >
-      <FieldGroup className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+      <FieldGroup className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-3">
         <Field>
           <FieldLabel htmlFor="stats-started-at-from">开始时间</FieldLabel>
           <Input
@@ -65,17 +65,12 @@ export function StatsFilters({
           />
         </Field>
 
-        <div className="flex flex-col gap-2 sm:flex-row md:justify-end">
-          <Button type="submit" className="w-full sm:w-auto">
+        <div className="flex justify-end gap-2">
+          <Button type="submit">
             <SearchIcon data-icon="inline-start" />
             筛选
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={onReset}
-          >
+          <Button type="button" variant="outline" onClick={onReset}>
             <RotateCcwIcon data-icon="inline-start" />
             重置
           </Button>

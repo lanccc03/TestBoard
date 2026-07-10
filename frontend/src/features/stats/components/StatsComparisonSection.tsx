@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 
 import type { StatsCounts } from '@/api/stats'
+import { DataPanel } from '@/components/data-panel'
 import {
   Table,
   TableBody,
@@ -37,10 +38,10 @@ type StatsComparisonSectionProps = {
 type TooltipValue = number | string | Array<number | string>
 
 const comparisonChartColors = {
-  passed: '#16a34a',
-  failureCount: '#dc2626',
-  skipped: '#ca8a04',
-  blocked: '#64748b',
+  passed: 'var(--success)',
+  failureCount: 'var(--destructive)',
+  skipped: 'var(--warning)',
+  blocked: 'var(--muted-foreground)',
   grid: 'var(--border)',
   axis: 'var(--muted-foreground)',
 }
@@ -93,12 +94,7 @@ export function StatsComparisonSection({
   items,
 }: StatsComparisonSectionProps) {
   return (
-    <section className="bg-card rounded-lg border shadow-sm">
-      <div className="flex flex-col gap-1 border-b px-5 py-4">
-        <h3 className="text-lg font-semibold tracking-normal">{title}</h3>
-        <p className="text-muted-foreground text-sm">{description}</p>
-      </div>
-
+    <DataPanel title={title} description={description} contentClassName="p-0">
       <div className="p-4">
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -189,7 +185,7 @@ export function StatsComparisonSection({
                   {item.description ?? '-'}
                 </TableCell>
                 <TableCell>{formatCount(item.total)}</TableCell>
-                <TableCell className="font-medium text-emerald-700">
+                <TableCell className="text-success font-medium">
                   {formatCount(item.passed)}
                 </TableCell>
                 <TableCell className="text-destructive font-medium">
@@ -205,6 +201,6 @@ export function StatsComparisonSection({
           </TableBody>
         </Table>
       </div>
-    </section>
+    </DataPanel>
   )
 }
