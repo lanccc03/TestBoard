@@ -1,11 +1,14 @@
 import { useState } from 'react'
 
 import type { CaseReportsQuery, CaseResult } from '@/api/caseReports'
+import { DataPanel } from '@/components/data-panel'
+import { PageHeader } from '@/components/page-header'
 import {
   EmptyState,
   ErrorState,
   LoadingState,
 } from '@/components/request-state'
+import { Button } from '@/components/ui/button'
 import {
   CaseReportsFilters,
   type CaseReportsFilterDraft,
@@ -82,12 +85,11 @@ export function CaseReportsPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold tracking-normal">用例报告</h2>
-        <p className="text-muted-foreground text-sm">
-          按时间、owner、执行机、结果、模块和用例筛选历史用例报告。
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="执行记录"
+        title="用例报告"
+        description="按时间、owner、执行机、结果、模块和用例筛选历史用例报告。"
+      />
 
       <CaseReportsFilters
         filters={draftFilters}
@@ -112,17 +114,29 @@ export function CaseReportsPage() {
         <EmptyState
           title="暂无用例报告"
           description="调整筛选条件或先上报用例报告。"
+          action={
+            <Button variant="outline" onClick={handleResetFilters}>
+              重置筛选
+            </Button>
+          }
         />
       ) : (
-        <>
+        <DataPanel
+          title="执行记录"
+          description="历史用例执行结果与报告入口。"
+          meta={`${caseReportsData.total} 条`}
+          contentClassName="p-0"
+        >
           <CaseReportsTable items={caseReportsData.items} />
-          <CaseReportsPagination
-            page={caseReportsData.page}
-            total={caseReportsData.total}
-            totalPages={caseReportsData.totalPages}
-            onPageChange={handlePageChange}
-          />
-        </>
+          <div className="border-t">
+            <CaseReportsPagination
+              page={caseReportsData.page}
+              total={caseReportsData.total}
+              totalPages={caseReportsData.totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        </DataPanel>
       )}
     </section>
   )

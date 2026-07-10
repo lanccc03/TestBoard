@@ -50,8 +50,11 @@ export function CaseReportsFilters({
   }
 
   return (
-    <form className="rounded-lg border p-4" onSubmit={handleSubmit}>
-      <FieldGroup className="grid gap-3 md:grid-cols-6">
+    <form
+      className="bg-card rounded-xl border p-5 shadow-sm"
+      onSubmit={handleSubmit}
+    >
+      <FieldGroup className="grid grid-cols-6 gap-3">
         <Field>
           <FieldLabel htmlFor="started-at-from">开始时间</FieldLabel>
           <Input
@@ -129,7 +132,7 @@ export function CaseReportsFilters({
           </Select>
         </Field>
 
-        <Field className="md:col-span-3">
+        <Field className="col-span-4">
           <FieldLabel htmlFor="case-query">用例 ID 或名称</FieldLabel>
           <Input
             id="case-query"
@@ -138,7 +141,7 @@ export function CaseReportsFilters({
           />
         </Field>
 
-        <div className="flex items-end gap-2 md:col-span-3">
+        <div className="col-span-2 flex items-end justify-end gap-2">
           <Button type="submit">
             <SearchIcon data-icon="inline-start" />
             筛选

@@ -71,6 +71,7 @@ describe('CaseReportsPage', () => {
     expect(
       screen.getByText('调整筛选条件或先上报用例报告。'),
     ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '重置筛选' })).toBeInTheDocument()
   })
 
   it('renders an error state with retry', () => {
@@ -131,6 +132,8 @@ describe('CaseReportsPage', () => {
 
     renderCaseReportsPage()
 
+    expect(screen.getByRole('region', { name: '执行记录' })).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: '用例报告' })).toBeInTheDocument()
     const failedRow = screen.getByRole('row', {
       name: /Checkout applies coupon/,
     })

@@ -36,12 +36,12 @@ export function CaseReportsPagination({
   }
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex items-center justify-between px-5 py-4">
       <p className="text-muted-foreground text-sm">
         共 {total} 条，当前第 {page} / {Math.max(totalPages, 1)} 页
       </p>
 
-      <Pagination className="sm:mx-0 sm:w-auto">
+      <Pagination className="mx-0 w-auto">
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
