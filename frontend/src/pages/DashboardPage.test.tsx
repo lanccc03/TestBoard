@@ -152,6 +152,22 @@ describe('DashboardPage', () => {
     expect(
       screen.getByRole('heading', { name: '首页看板' }),
     ).toBeInTheDocument()
+    expect(
+      screen.getByRole('article', { name: '今日报告总数' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('article', { name: '今日通过率' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: 'Owner 今日概览' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: '最近执行机' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('region', { name: '最近失败用例' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/统计窗口：/)).toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(screen.getByText('33.3%')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()

@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 
+import { PageHeader } from '@/components/page-header'
 import {
   EmptyState,
   ErrorState,
@@ -24,12 +25,19 @@ export function DashboardPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold tracking-normal">首页看板</h2>
-        <p className="text-muted-foreground text-sm">
-          展示今日质量概览、owner 聚合、执行机最近结果和最近失败用例。
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="质量概览"
+        title="首页看板"
+        description="展示今日质量概览、owner 聚合、执行机最近结果和最近失败用例。"
+        meta={
+          dashboardData ? (
+            <span>
+              统计窗口：{formatDateTime(dashboardData.todayStart)} 至{' '}
+              {formatDateTime(dashboardData.todayEnd)}
+            </span>
+          ) : undefined
+        }
+      />
 
       {dashboardQuery.isPending ? (
         <LoadingState
@@ -55,16 +63,25 @@ export function DashboardPage() {
         />
       ) : (
         <>
-          <div className="text-muted-foreground text-sm">
-            统计窗口：{formatDateTime(dashboardData.todayStart)} 至{' '}
-            {formatDateTime(dashboardData.todayEnd)}
-          </div>
           <DashboardMetricCards today={dashboardData.today} />
-          {dashboardData.ownerSummaries.length > 0 ? (
-            <DashboardOwnerSummaryTable items={dashboardData.ownerSummaries} />
-          ) : null}
-          {dashboardData.recentRunners.length > 0 ? (
-            <DashboardRecentRunnersTable items={dashboardData.recentRunners} />
+          {dashboardData.ownerSummaries.length > 0 ||
+          dashboardData.recentRunners.length > 0 ? (
+            <div className="grid grid-cols-5 gap-4">
+              {dashboardData.ownerSummaries.length > 0 ? (
+                <div className="col-span-2">
+                  <DashboardOwnerSummaryTable
+                    items={dashboardData.ownerSummaries}
+                  />
+                </div>
+              ) : null}
+              {dashboardData.recentRunners.length > 0 ? (
+                <div className="col-span-3">
+                  <DashboardRecentRunnersTable
+                    items={dashboardData.recentRunners}
+                  />
+                </div>
+              ) : null}
+            </div>
           ) : null}
           {dashboardData.recentFailures.length > 0 ? (
             <DashboardRecentFailuresTable
