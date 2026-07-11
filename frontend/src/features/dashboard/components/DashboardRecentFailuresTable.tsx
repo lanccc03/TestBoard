@@ -31,18 +31,16 @@ export function DashboardRecentFailuresTable({
       description="最近上报的失败或异常用例。"
       contentClassName="p-0"
     >
-      <Table aria-label="最近失败用例">
+      <Table aria-label="最近失败用例" className="table-fixed">
         <TableHeader>
           <TableRow>
             <TableHead>开始时间</TableHead>
-            <TableHead>用例</TableHead>
-            <TableHead>模块</TableHead>
+            <TableHead>用例 / 模块</TableHead>
             <TableHead>执行机</TableHead>
             <TableHead>结果</TableHead>
             <TableHead>耗时</TableHead>
             <TableHead>错误</TableHead>
-            <TableHead>报告</TableHead>
-            <TableHead>操作</TableHead>
+            <TableHead className="w-40">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -55,9 +53,11 @@ export function DashboardRecentFailuresTable({
                   <span className="text-muted-foreground font-mono text-xs">
                     {item.caseId}
                   </span>
+                  <span className="text-muted-foreground text-xs">
+                    {item.module ?? '-'}
+                  </span>
                 </div>
               </TableCell>
-              <TableCell>{item.module ?? '-'}</TableCell>
               <TableCell>
                 <div className="flex flex-col gap-1">
                   <span>{item.runnerId}</span>
@@ -72,7 +72,7 @@ export function DashboardRecentFailuresTable({
               <TableCell>{formatDuration(item.durationMs)}</TableCell>
               <TableCell>
                 {item.errorType || item.errorMessage ? (
-                  <div className="flex max-w-72 flex-col gap-1">
+                  <div className="flex max-w-48 flex-col gap-1">
                     {item.errorType ? (
                       <span className="font-medium">{item.errorType}</span>
                     ) : null}
@@ -87,19 +87,19 @@ export function DashboardRecentFailuresTable({
                 )}
               </TableCell>
               <TableCell>
-                <Button asChild variant="link" size="sm" className="px-0">
-                  <a href={item.reportUrl} target="_blank" rel="noreferrer">
-                    报告
-                    <ExternalLinkIcon data-icon="inline-end" />
-                  </a>
-                </Button>
-              </TableCell>
-              <TableCell>
-                <Button asChild variant="outline" size="sm">
-                  <Link to={`/case-reports/${item.caseReportId}`}>
-                    查看详情
-                  </Link>
-                </Button>
+                <div className="flex items-center gap-1 whitespace-nowrap">
+                  <Button asChild variant="link" size="sm" className="px-2">
+                    <a href={item.reportUrl} target="_blank" rel="noreferrer">
+                      报告
+                      <ExternalLinkIcon data-icon="inline-end" />
+                    </a>
+                  </Button>
+                  <Button asChild variant="outline" size="sm">
+                    <Link to={`/case-reports/${item.caseReportId}`}>
+                      查看详情
+                    </Link>
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

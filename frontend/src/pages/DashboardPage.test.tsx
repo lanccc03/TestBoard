@@ -191,6 +191,12 @@ describe('DashboardPage', () => {
     expect(within(runnerRow).getByText('异常')).toBeInTheDocument()
 
     const failureTable = screen.getByRole('table', { name: '最近失败用例' })
+    expect(
+      within(failureTable).getAllByRole('columnheader', { name: '操作' }),
+    ).toHaveLength(1)
+    expect(
+      within(failureTable).queryByRole('columnheader', { name: '报告' }),
+    ).not.toBeInTheDocument()
     const failureRow = within(failureTable).getByRole('row', {
       name: /Search index refresh/,
     })
