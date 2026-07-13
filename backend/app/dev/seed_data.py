@@ -93,93 +93,38 @@ def build_dev_reports() -> list[TestReportRequest]:
         ip="127.0.0.13",
     )
 
-    return [
-        _report(
-            idempotency_key="dev-seed-login-pass",
-            runner=runner_web_a,
-            test_case=_case(
-                "DEV-LOGIN-001",
-                "login with password",
-                "login",
-                "passed",
-                started_at=base_time,
-            ),
-        ),
-        _report(
-            idempotency_key="dev-seed-checkout-fail",
-            runner=runner_web_b,
-            test_case=_case(
-                "DEV-CHECKOUT-002",
-                "coupon discount applies once",
-                "checkout",
-                "failed",
-                started_at=base_time + timedelta(hours=1),
-                error_type="AssertionError",
-                error_message="expected discount 20, got 0",
-            ),
-        ),
-        _report(
-            idempotency_key="dev-seed-search-error",
-            runner=runner_api,
-            test_case=_case(
-                "DEV-SEARCH-002",
-                "index refresh completes",
-                "search",
-                "error",
-                started_at=base_time + timedelta(hours=2),
-                error_type="RuntimeError",
-                error_message="search service timed out",
-            ),
-        ),
-        _report(
-            idempotency_key="dev-seed-api-pass",
-            runner=runner_api,
-            test_case=_case(
-                "DEV-API-001",
-                "create report endpoint accepts payload",
-                "api",
-                "passed",
-                started_at=base_time + timedelta(days=1),
-            ),
-        ),
-        _report(
-            idempotency_key="dev-seed-mobile-fail",
-            runner=runner_mobile,
-            test_case=_case(
-                "DEV-MOBILE-003",
-                "offline banner is hidden after reconnect",
-                "mobile",
-                "failed",
-                started_at=base_time + timedelta(days=1, hours=3),
-                error_type="AssertionError",
-                error_message="offline banner remained visible",
-            ),
-        ),
-        _report(
-            idempotency_key="dev-seed-empty-skipped",
-            runner=runner_web_a,
-            test_case=_case(
-                "DEV-EMPTY-001",
-                "feature flag disabled case",
-                "empty",
-                "skipped",
-                started_at=base_time + timedelta(days=2),
-            ),
-        ),
-        _report(
-            idempotency_key="dev-seed-payment-blocked",
-            runner=runner_web_b,
-            test_case=_case(
-                "DEV-PAYMENT-004",
-                "payment provider sandbox is unavailable",
-                "payment",
-                "blocked",
-                started_at=base_time + timedelta(days=2, hours=2),
-                error_type="EnvironmentBlocked",
-                error_message="payment provider sandbox is unavailable",
-            ),
-        ),
-    ]
+    runners = (runner_web_a, runner_web_b, runner_api, runner_mobile)
+    modules = ("login", "checkout", "search", "api", "mobile", "empty", "payment")
+    outcomes: tuple[tuple[CaseResult, str | None, str | None], ...] = (
+        ("passed", None, None),
+        ("failed", "AssertionError", "expected discount 20, got 0"),
+        ("error", "RuntimeError", "search service timed out"),
+        ("skipped", None, None),
+        ("blocked", "EnvironmentBlocked", "payment provider sandbox is unavailable"),
+    )
+
+    reports: list[TestReportRequest] = []
+    for index in range(100):
+        sequence = index + 1
+        module = modules[index % len(modules)]
+        result, error_type, error_message = outcomes[index % len(outcomes)]
+        reports.append(
+            _report(
+                idempotency_key=f"dev-seed-report-{sequence:03d}",
+                runner=runners[index % len(runners)],
+                test_case=_case(
+                    case_id=f"DEV-{module.upper()}-{sequence:03d}",
+                    case_name=f"{module} development scenario {sequence}",
+                    module=module,
+                    result=result,
+                    started_at=base_time + timedelta(minutes=30 * index),
+                    error_type=error_type,
+                    error_message=error_message,
+                ),
+            )
+        )
+
+    return reports
 
 
 def _write_seed_report_file(
