@@ -54,9 +54,6 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: '用例报告' }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(/按时间、owner、执行机、结果、模块和用例筛选/),
-    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '筛选' })).toBeInTheDocument()
   })
 
@@ -72,7 +69,6 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: '失败用例' }),
     ).toBeInTheDocument()
-    expect(screen.getByText(/筛选失败或异常用例/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '筛选' })).toBeInTheDocument()
   })
 

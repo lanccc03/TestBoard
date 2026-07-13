@@ -85,11 +85,7 @@ export function CaseReportsPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow="执行记录"
-        title="用例报告"
-        description="按时间、owner、执行机、结果、模块和用例筛选历史用例报告。"
-      />
+      <PageHeader eyebrow="执行记录" title="用例报告" />
 
       <CaseReportsFilters
         filters={draftFilters}

@@ -153,7 +153,6 @@ export function StatsPage() {
       <PageHeader
         eyebrow="质量分析"
         title="统计趋势"
-        description="展示日期趋势，以及 owner、执行机、用例维度的 Top 10 对比。"
         status={
           summary ? (
             <Badge

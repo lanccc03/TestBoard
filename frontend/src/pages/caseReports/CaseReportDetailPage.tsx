@@ -130,7 +130,6 @@ export function CaseReportDetailPage() {
             </Button>
           }
           title={detail.caseName}
-          description={detail.caseId}
           status={<CaseResultBadge result={detail.result} />}
           action={
             <Button asChild>

@@ -118,7 +118,6 @@ describe('CaseReportDetailPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Checkout applies coupon' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('CASE-2')).toBeInTheDocument()
     expect(screen.getByRole('region', { name: '用例信息' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: '执行机' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: '错误信息' })).toBeInTheDocument()

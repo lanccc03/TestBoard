@@ -81,11 +81,7 @@ export function FailuresPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow="故障排查"
-        title="失败用例"
-        description="按时间、owner、执行机、模块和用例 ID 筛选失败或异常用例。"
-      />
+      <PageHeader eyebrow="故障排查" title="失败用例" />
 
       <FailureCasesFilters
         filters={draftFilters}

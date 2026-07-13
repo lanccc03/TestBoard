@@ -28,7 +28,6 @@ export function DashboardPage() {
       <PageHeader
         eyebrow="质量概览"
         title="首页看板"
-        description="展示今日质量概览、owner 聚合、执行机最近结果和最近失败用例。"
         meta={
           dashboardData ? (
             <span>

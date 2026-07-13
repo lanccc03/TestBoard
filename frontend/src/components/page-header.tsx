@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils'
 export type PageHeaderProps = {
   eyebrow?: ReactNode
   title: ReactNode
-  description: string
   status?: ReactNode
   meta?: ReactNode
   action?: ReactNode
@@ -15,7 +14,6 @@ export type PageHeaderProps = {
 export function PageHeader({
   eyebrow,
   title,
-  description,
   status,
   meta,
   action,
@@ -41,7 +39,6 @@ export function PageHeader({
           </h2>
           {status}
         </div>
-        <p className="text-muted-foreground max-w-3xl text-sm">{description}</p>
         {meta ? (
           <div className="text-muted-foreground text-xs">{meta}</div>
         ) : null}

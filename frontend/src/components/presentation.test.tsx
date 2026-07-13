@@ -12,7 +12,6 @@ describe('shared presentation components', () => {
       <PageHeader
         eyebrow="质量工作区"
         title="用例报告"
-        description="筛选并查看历史执行记录。"
         status={<span>状态稳定</span>}
         meta={<span>统计窗口：今天</span>}
         action={<button type="button">刷新</button>}
