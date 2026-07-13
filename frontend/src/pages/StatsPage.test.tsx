@@ -312,6 +312,7 @@ describe('StatsPage', () => {
     const summary = screen.getByLabelText('统计概览')
     expect(within(summary).getByText('通过率')).toBeInTheDocument()
     expect(within(summary).getByText('50.0%')).toBeInTheDocument()
+    expect(screen.queryByText(/统计窗口：/)).not.toBeInTheDocument()
   })
 
   it('hides summary metrics when any stats query fails', () => {

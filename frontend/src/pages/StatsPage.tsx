@@ -24,7 +24,6 @@ import {
   type StatsFilterDraft,
 } from '@/features/stats/components/StatsFilters'
 import { StatsTrendSection } from '@/features/stats/components/StatsTrendSection'
-import { formatDateTime } from '@/features/caseReports/lib/formatters'
 import { formatCount, formatPassRate } from '@/features/stats/lib/formatters'
 import { useStats } from '@/hooks/useStats'
 
@@ -160,14 +159,6 @@ export function StatsPage() {
             >
               {summary.failureCount > 0 ? '存在失败' : '状态稳定'}
             </Badge>
-          ) : undefined
-        }
-        meta={
-          hasCompleteStatsData ? (
-            <span>
-              统计窗口：{formatDateTime(byDateData.range.startedAtFrom)} 至{' '}
-              {formatDateTime(byDateData.range.startedAtTo)}
-            </span>
           ) : undefined
         }
       />

@@ -11,7 +11,6 @@ import { DashboardMetricCards } from '@/features/dashboard/components/DashboardM
 import { DashboardOwnerSummaryTable } from '@/features/dashboard/components/DashboardOwnerSummaryTable'
 import { DashboardRecentFailuresTable } from '@/features/dashboard/components/DashboardRecentFailuresTable'
 import { DashboardRecentRunnersTable } from '@/features/dashboard/components/DashboardRecentRunnersTable'
-import { formatDateTime } from '@/features/caseReports/lib/formatters'
 import { useDashboard } from '@/hooks/useDashboard'
 
 export function DashboardPage() {
@@ -25,18 +24,7 @@ export function DashboardPage() {
 
   return (
     <section className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow="质量概览"
-        title="首页看板"
-        meta={
-          dashboardData ? (
-            <span>
-              统计窗口：{formatDateTime(dashboardData.todayStart)} 至{' '}
-              {formatDateTime(dashboardData.todayEnd)}
-            </span>
-          ) : undefined
-        }
-      />
+      <PageHeader eyebrow="质量概览" title="首页看板" />
 
       {dashboardQuery.isPending ? (
         <LoadingState

@@ -167,7 +167,7 @@ describe('DashboardPage', () => {
     expect(
       screen.getByRole('region', { name: '最近失败用例' }),
     ).toBeInTheDocument()
-    expect(screen.getByText(/统计窗口：/)).toBeInTheDocument()
+    expect(screen.queryByText(/统计窗口：/)).not.toBeInTheDocument()
     expect(screen.getByText('3')).toBeInTheDocument()
     expect(screen.getByText('33.3%')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
